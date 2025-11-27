@@ -77,4 +77,8 @@ jspm_packages/
 /deploy-clean.ps1
 /deploy-remote.ps1
 /deploy-config.ps1
-/test.ps1 
+/test.ps1
+
+# Temporäre/Backup-Dateien
+we-custom-fields-block-old.php
+we-custom-fields-block-new.php 
