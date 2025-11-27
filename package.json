@@ -1,6 +1,6 @@
 {
   "name": "we-custom-fields-block",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "WordPress plugin to display native custom fields as blocks with typography and color options",
   "main": "build/index.js",
   "scripts": {
@@ -29,8 +29,7 @@
   "author": "Gabriele Laesser",
   "license": "GPL-2.0-or-later",
   "devDependencies": {
-    "@wordpress/scripts": "^26.0.0",
-    "copy-webpack-plugin": "^13.0.1"
+    "@wordpress/scripts": "^26.0.0"
   },
   "dependencies": {
     "@wordpress/block-editor": "^12.0.0",
