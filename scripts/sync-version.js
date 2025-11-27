@@ -86,15 +86,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 lastTag = '';
             }
 
-            // Get commits since last tag (or last 10 if no tags)
+            // Get commits since last tag (or last 20 if no tags)
+            // Exclude release commits and merge commits
             const gitCommand = lastTag
-                ? `git log ${lastTag}..HEAD --oneline --pretty=format:"- %s"`
-                : 'git log -10 --oneline --pretty=format:"- %s"';
+                ? `git log ${lastTag}..HEAD --oneline --pretty=format:"%s" --no-merges`
+                : 'git log -20 --oneline --pretty=format:"%s" --no-merges';
 
-            gitLog = execSync(gitCommand, {
+            let commits = execSync(gitCommand, {
                 encoding: 'utf8',
                 stdio: ['pipe', 'pipe', 'ignore']
-            }).trim();
+            }).trim().split('\n').filter(line => {
+                // Filter out release commits and empty lines
+                const trimmed = line.trim();
+                return trimmed &&
+                    !trimmed.match(/^Release v\d+\.\d+\.\d+$/i) &&
+                    !trimmed.match(/^Bump version/i) &&
+                    !trimmed.match(/^Version update$/i);
+            });
+
+            // Format as changelog entries
+            if (commits.length > 0) {
+                gitLog = commits.map(commit => `- ${commit.trim()}`).join('\n');
+            } else {
+                gitLog = '';
+            }
         } catch (e) {
             // Fallback if git fails
             gitLog = '- Version update';
@@ -107,10 +122,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             unreleasedContent = unreleasedMatch[1].trim();
         }
 
+        // Combine unreleased content and git log, prioritizing unreleased
+        let changelogEntry = '';
+        if (unreleasedContent) {
+            changelogEntry = unreleasedContent;
+        } else if (gitLog) {
+            changelogEntry = gitLog;
+        } else {
+            // If no commits found, try to get commits from the last 20 commits
+            try {
+                const allCommits = execSync('git log -20 --oneline --pretty=format:"%s" --no-merges', {
+                    encoding: 'utf8',
+                    stdio: ['pipe', 'pipe', 'ignore']
+                }).trim().split('\n').filter(line => {
+                    const trimmed = line.trim();
+                    return trimmed &&
+                        !trimmed.match(/^Release v\d+\.\d+\.\d+$/i) &&
+                        !trimmed.match(/^Bump version/i) &&
+                        !trimmed.match(/^Version update$/i);
+                });
+
+                if (allCommits.length > 0) {
+                    changelogEntry = allCommits.slice(0, 10).map(commit => `- ${commit.trim()}`).join('\n');
+                } else {
+                    changelogEntry = '- Version update';
+                }
+            } catch (e) {
+                changelogEntry = '- Version update';
+            }
+        }
+
         // Create new changelog entry
         const newEntry = `## [${version}] - ${dateStr}
 
-${unreleasedContent || gitLog || '- Version update'}
+${changelogEntry}
 
 `;
 
