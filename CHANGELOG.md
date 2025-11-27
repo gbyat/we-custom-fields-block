@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.12] - 2025-11-27
 
 - Update CHANGELOG to reflect plugin renaming, versioning improvements, and enhance release links for v0.1.10 and v0.1.11.
 
@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 
 ## [0.1.11] - 2025-11-27
 
@@ -61,3 +62,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump version to $(node -p 'require(\'./package.json\').version')
   [0.1.10]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.10
   [0.1.11]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.11
+[0.1.12]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.12
