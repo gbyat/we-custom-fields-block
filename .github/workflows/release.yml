@@ -12,13 +12,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        run: |
+          git clone https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.ref }}
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.0"
-          tools: composer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php php-cli php-xml php-mbstring
 
       - name: Install PHP dependencies
         run: |
@@ -75,7 +76,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        run: |
+          git clone https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.ref }}
 
       - name: Extract version from tag
         id: version
@@ -85,10 +88,9 @@ jobs:
           echo "Version: ${VERSION}"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
 
       - name: Install dependencies
         run: npm ci
@@ -143,20 +145,22 @@ jobs:
           echo "✅ ZIP file created: ${ZIP_NAME}"
           ls -lh ${ZIP_NAME}
 
+      - name: Setup GitHub CLI
+        run: |
+          type -p curl >/dev/null || sudo apt install curl -y
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: we-custom-fields-block.zip
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Release Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugin-zip
-          path: we-custom-fields-block.zip
-          retention-days: 90
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          gh auth setup-git
+          gh release create ${GITHUB_REF#refs/tags/} \
+            --title "Release ${VERSION}" \
+            --notes-file CHANGELOG.md \
+            we-custom-fields-block.zip
