@@ -16,6 +16,10 @@ module.exports = {
                     from: path.resolve(__dirname, 'src/index.css'),
                     to: path.resolve(__dirname, 'build/index.css'),
                 },
+                {
+                    from: path.resolve(__dirname, 'src/render.php'),
+                    to: path.resolve(__dirname, 'build/render.php'),
+                },
             ],
         }),
     ],

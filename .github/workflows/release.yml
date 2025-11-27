@@ -122,6 +122,12 @@ jobs:
             exit 1
           fi
 
+          # Copy inc directory (plugin classes)
+          if [ -d "inc" ]; then
+            cp -r inc ${PLUGIN_NAME}/
+            echo "✅ Copied inc/ (plugin classes)"
+          fi
+
           # Copy languages directory (translations)
           if [ -d "languages" ]; then
             cp -r languages ${PLUGIN_NAME}/
