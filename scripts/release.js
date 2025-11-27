@@ -88,12 +88,30 @@ try {
         process.exit(1);
     }
 
+    // Check if force push is needed
+    const forcePush = process.argv.includes('--force') || process.argv.includes('-f');
+
+    if (forcePush) {
+        console.log('⚠️  WARNING: Force push enabled!');
+        console.log('   This will overwrite remote changes.');
+    } else {
+        // Try to pull latest changes from remote before pushing
+        console.log('⬇️  Pulling latest changes from remote...');
+        try {
+            execSync('git pull --rebase origin ' + branch, { stdio: 'inherit' });
+        } catch (e) {
+            console.log('⚠️  Pull failed. Use --force to force push (dangerous!)');
+            console.log('   Continuing with normal push...');
+        }
+    }
+
     // Push to GitHub
     console.log('⬆️  Pushing to GitHub...');
     console.log(`   Pushing branch: ${branch}`);
     console.log(`   Pushing tag: v${newVersion}`);
 
-    execSync(`git push origin ${branch}`, { stdio: 'inherit' });
+    const pushCommand = forcePush ? `git push --force origin ${branch}` : `git push origin ${branch}`;
+    execSync(pushCommand, { stdio: 'inherit' });
     execSync(`git push origin v${newVersion}`, { stdio: 'inherit' });
 
     console.log('');
