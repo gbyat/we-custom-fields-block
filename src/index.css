@@ -40,7 +40,7 @@
 }
 
 /* Wide alignment */
-.wp-block-custom-fields-block-custom-field.alignwide {
+.wp-block-we-custom-fields-block-custom-field.alignwide {
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
@@ -99,7 +99,7 @@
         padding: 10px;
     }
     
-    .wp-block-custom-fields-block-custom-field.alignwide {
+    .wp-block-we-custom-fields-block-custom-field.alignwide {
         max-width: 100%;
         margin-left: 0;
         margin-right: 0;

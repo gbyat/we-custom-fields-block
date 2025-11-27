@@ -1,23 +1,148 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-const version = pkg.version;
+// Read package.json
+const packagePath = path.join(__dirname, '..', 'package.json');
+const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const version = packageData.version;
 
-const pluginFile = path.join(__dirname, '..', 'custom-fields-block.php');
-let content = fs.readFileSync(pluginFile, 'utf8');
+console.log(`📦 Syncing version to ${version}...`);
 
-// Plugin-Header ersetzen
-content = content.replace(
-    /(\* Version:\s*)([0-9]+\.[0-9]+\.[0-9]+)/,
-    `$1${version}`
+// Read plugin file
+const pluginPath = path.join(__dirname, '..', 'we-custom-fields-block.php');
+let pluginContent = fs.readFileSync(pluginPath, 'utf8');
+
+// Update version in plugin file header
+pluginContent = pluginContent.replace(
+    /Version:\s*\d+\.\d+\.\d+/,
+    `Version: ${version}`
 );
 
-// CFB_VERSION Konstante ersetzen
-content = content.replace(
-    /(define\(['"]CFB_VERSION['"],\s*['"])([0-9]+\.[0-9]+\.[0-9]+)(['"]\);)/,
-    `$1${version}$3`
+// Update CFB_VERSION constant
+pluginContent = pluginContent.replace(
+    /define\(\s*'CFB_VERSION',\s*'[^']*'\s*\);/,
+    `define('CFB_VERSION', '${version}');`
 );
 
-fs.writeFileSync(pluginFile, content, 'utf8');
-console.log(`✅ Plugin-Version auf ${version} synchronisiert.`); 
+// Write updated plugin file
+fs.writeFileSync(pluginPath, pluginContent);
+console.log(`✅ Updated we-custom-fields-block.php`);
+
+// Update README stable tag
+const readmePath = path.join(__dirname, '..', 'README.md');
+if (fs.existsSync(readmePath)) {
+    let readmeContent = fs.readFileSync(readmePath, 'utf8');
+    const stableTagPattern = /\*\*Stable tag:\*\*\s*[0-9A-Za-z.\-]+/;
+    if (stableTagPattern.test(readmeContent)) {
+        readmeContent = readmeContent.replace(stableTagPattern, `**Stable tag:** ${version}`);
+        fs.writeFileSync(readmePath, readmeContent);
+        console.log('✅ Updated README.md stable tag');
+    } else {
+        console.warn('⚠️ Could not find Stable tag in README.md');
+    }
+}
+
+// Update CHANGELOG.md
+const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
+if (!fs.existsSync(changelogPath)) {
+    // Create initial CHANGELOG.md
+    const initialContent = `# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [${version}] - ${new Date().toISOString().split('T')[0]}
+
+### Added
+- Initial release of Custom Fields Block
+
+`;
+    fs.writeFileSync(changelogPath, initialContent);
+    console.log(`📝 Created CHANGELOG.md`);
+} else {
+    let changelogContent = fs.readFileSync(changelogPath, 'utf8');
+
+    // Check if this version already exists in changelog
+    const versionPattern = new RegExp(`## \\[${version.replace(/\./g, '\\.')}\\]`);
+    if (!versionPattern.test(changelogContent)) {
+        // Get current date
+        const dateStr = new Date().toISOString().split('T')[0];
+
+        // Get git commits since last tag
+        let gitLog = '';
+        try {
+            // First, try to get the last tag
+            let lastTag = '';
+            try {
+                lastTag = execSync('git describe --tags --abbrev=0', {
+                    encoding: 'utf8',
+                    stdio: ['pipe', 'pipe', 'ignore']
+                }).trim();
+            } catch (e) {
+                // No tags yet, use all commits
+                lastTag = '';
+            }
+
+            // Get commits since last tag (or last 10 if no tags)
+            const gitCommand = lastTag
+                ? `git log ${lastTag}..HEAD --oneline --pretty=format:"- %s"`
+                : 'git log -10 --oneline --pretty=format:"- %s"';
+
+            gitLog = execSync(gitCommand, {
+                encoding: 'utf8',
+                stdio: ['pipe', 'pipe', 'ignore']
+            }).trim();
+        } catch (e) {
+            // Fallback if git fails
+            gitLog = '- Version update';
+        }
+
+        // Get unreleased changes if they exist
+        const unreleasedMatch = changelogContent.match(/## \[Unreleased\]([\s\S]*?)(?=## \[|$)/);
+        let unreleasedContent = '';
+        if (unreleasedMatch && unreleasedMatch[1]) {
+            unreleasedContent = unreleasedMatch[1].trim();
+        }
+
+        // Create new changelog entry
+        const newEntry = `## [${version}] - ${dateStr}
+
+${unreleasedContent || gitLog || '- Version update'}
+
+`;
+
+        // Insert after the first heading (main title)
+        const lines = changelogContent.split('\n');
+        const firstHeadingIndex = lines.findIndex(line => line.startsWith('## ['));
+
+        if (firstHeadingIndex !== -1) {
+            lines.splice(firstHeadingIndex, 0, newEntry);
+            changelogContent = lines.join('\n');
+        } else {
+            // No existing entries, add after main heading
+            changelogContent = changelogContent.replace(
+                /(# Changelog.*?\n\n)/s,
+                `$1${newEntry}`
+            );
+        }
+
+        // Remove unreleased section if it was used
+        changelogContent = changelogContent.replace(/## \[Unreleased\][\s\S]*?(?=## \[|$)/, '');
+
+        // Add release link at the bottom if it doesn't exist
+        if (!changelogContent.includes(`[${version}]:`)) {
+            const releaseLink = `\n[${version}]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v${version}\n`;
+            changelogContent = changelogContent.trim() + releaseLink;
+        }
+
+        fs.writeFileSync(changelogPath, changelogContent);
+        console.log(`📝 Updated CHANGELOG.md with version ${version}`);
+    } else {
+        console.log(`ℹ️  Version ${version} already exists in CHANGELOG.md`);
+    }
+}
+
+console.log(`✅ Version synchronized to ${version}`); 

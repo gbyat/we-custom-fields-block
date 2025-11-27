@@ -1,22 +1,88 @@
-name: Create Release
+name: Release
 
 on:
   push:
     tags:
-      - "v*"
-
-permissions:
-  contents: write
+      - "v*" # Trigger on version tags (e.g., v1.0.0)
 
 jobs:
-  build:
+  validate:
+    name: Validate Code
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          ref: ${{ github.ref_name }}
+          php-version: "8.0"
+          tools: composer
+
+      - name: Install PHP dependencies
+        run: |
+          if [ -f composer.json ]; then
+            composer install --no-interaction --prefer-dist
+          fi
+
+      - name: Run PHP Linter (phpcs)
+        continue-on-error: true
+        run: |
+          # Check if phpcs is available
+          if command -v phpcs &> /dev/null || [ -f vendor/bin/phpcs ]; then
+            if [ -f vendor/bin/phpcs ]; then
+              vendor/bin/phpcs --standard=WordPress --extensions=php we-custom-fields-block.php
+            else
+              phpcs --standard=WordPress --extensions=php we-custom-fields-block.php
+            fi
+          else
+            echo "phpcs not found, skipping lint check"
+          fi
+
+      - name: Validate Plugin Header
+        run: |
+          php -r "
+          \$header = file_get_contents('we-custom-fields-block.php');
+          if (!preg_match('/Version:\s*[\d.]+/', \$header)) {
+            echo 'ERROR: Version not found in plugin header\n';
+            exit(1);
+          }
+          echo '✓ Plugin header valid\n';
+          "
+
+      - name: Validate CHANGELOG
+        run: |
+          if [ ! -f CHANGELOG.md ]; then
+            echo "ERROR: CHANGELOG.md not found"
+            exit 1
+          fi
+
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          if ! grep -q "## \[${VERSION}\]" CHANGELOG.md; then
+            echo "ERROR: Version ${VERSION} not found in CHANGELOG.md"
+            exit 1
+          fi
+
+          echo "✓ CHANGELOG.md contains version ${VERSION}"
+
+  build:
+    name: Build Release
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,98 +93,70 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Sync version first
-        run: |
-          echo "Syncing version before building..."
-          npm run version-sync
-          echo "Version sync completed"
+      - name: Sync version
+        run: npm run sync-version
 
       - name: Build plugin
         run: npm run build
 
-      - name: Prepare release folder
+      - name: Create plugin ZIP
         run: |
-          mkdir release
-          cp custom-fields-block.php release/
-          cp package.json release/
-          cp README.md release/
-          cp INSTALLATION.md release/
-          cp -r build release/
-          if [ -d languages ]; then cp -r languages release/; fi
+          PLUGIN_NAME="we-custom-fields-block"
+          ZIP_NAME="${PLUGIN_NAME}.zip"
 
-      - name: Create ZIP
-        run: |
-          cd release
-          zip -r ../custom-fields-block.zip .
+          # Create a temporary directory for the plugin
+          mkdir -p ${PLUGIN_NAME}
 
-      - name: Delete existing assets
-        run: |
-          # Get release ID with error handling
-          RELEASE_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}")
+          # Copy main plugin file
+          cp we-custom-fields-block.php ${PLUGIN_NAME}/
+          echo "✅ Copied we-custom-fields-block.php"
 
-          echo "Release response: $RELEASE_RESPONSE"
-
-          RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id // empty')
-
-          if [ -z "$RELEASE_ID" ]; then
-            echo "Could not get release ID, skipping asset deletion"
-            exit 0
-          fi
-
-          echo "Release ID: $RELEASE_ID"
-
-          # Get existing assets with error handling
-          ASSETS_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets")
-
-          echo "Assets response: $ASSETS_RESPONSE"
-
-          # Check if response is valid JSON array
-          if echo "$ASSETS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            ASSETS=$(echo "$ASSETS_RESPONSE" | jq -r '.[] | select(.name == "custom-fields-block.zip") | .id // empty')
-            
-            # Delete existing assets
-            for asset_id in $ASSETS; do
-              if [ ! -z "$asset_id" ]; then
-                echo "Deleting asset ID: $asset_id"
-                curl -X DELETE -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
-                  "https://api.github.com/repos/${{ github.repository }}/releases/assets/$asset_id"
-              fi
-            done
+          # Copy build directory (block assets)
+          if [ -d "build" ]; then
+            cp -r build ${PLUGIN_NAME}/
+            echo "✅ Copied build/ (block assets)"
           else
-            echo "Invalid assets response, skipping deletion"
+            echo "ERROR: build directory not found!"
+            exit 1
           fi
 
-      - name: Create Release
+          # Copy languages directory (translations)
+          if [ -d "languages" ]; then
+            cp -r languages ${PLUGIN_NAME}/
+            echo "✅ Copied languages/ (translations)"
+          fi
+
+          # Copy documentation files
+          for doc in README.md CHANGELOG.md; do
+            if [ -f "$doc" ]; then
+              cp "$doc" ${PLUGIN_NAME}/
+              echo "✅ Copied $doc"
+            fi
+          done
+
+          # Create ZIP file - always named we-custom-fields-block.zip
+          zip -r ${ZIP_NAME} ${PLUGIN_NAME}/
+
+          # Clean up temporary directory
+          rm -rf ${PLUGIN_NAME}
+
+          echo "✅ ZIP file created: ${ZIP_NAME}"
+          ls -lh ${ZIP_NAME}
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: custom-fields-block.zip
+          files: we-custom-fields-block.zip
           generate_release_notes: true
           draft: false
           prerelease: false
-          body: |
-            ## Changelog
-
-            ### Version ${{ github.ref_name }}
-
-            - Verbesserte Debug-Funktionen für Update-System
-            - Korrigierte Einstellungsseite mit WordPress Settings API
-            - Zentrales Custom Fields Caching-System
-            - Dropdown direkt im Block integriert
-            - Automatische Cache-Verwaltung
-
-            ### Installation
-
-            1. Deaktiviere das aktuelle Plugin
-            2. Lade die ZIP-Datei hoch
-            3. Aktiviere das Plugin wieder
-
-            ### Bekannte Probleme
-
-            Falls das Update fehlschlägt:
-            1. Gehe zu Einstellungen → Custom Fields Block
-            2. Klicke "Update Cache leeren"
-            3. Versuche das Update erneut
+          make_latest: true
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zip
+          path: we-custom-fields-block.zip
+          retention-days: 90

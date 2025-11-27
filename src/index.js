@@ -2,33 +2,21 @@ import { registerBlockType } from '@wordpress/blocks';
 import { __ } from '@wordpress/i18n';
 import {
     useBlockProps,
-    InspectorControls,
-    useInnerBlocksProps,
-    RichText,
-    BlockControls,
-    AlignmentToolbar
+    InspectorControls
 } from '@wordpress/block-editor';
 import {
     PanelBody,
-    SelectControl,
-    ToggleControl,
-    RangeControl,
-    ColorPalette,
-    __experimentalNumberControl as NumberControl
+    SelectControl
 } from '@wordpress/components';
 import { useState, useEffect } from '@wordpress/element';
 import React from 'react';
 
-registerBlockType('custom-fields-block/custom-field', {
+registerBlockType('we-custom-fields-block/custom-field', {
     edit: function Edit({ attributes, setAttributes, clientId }) {
         const {
             fieldKey,
             displayType,
-            headingLevel,
-            typography,
-            colors,
-            spacing,
-            alignment
+            headingLevel
         } = attributes;
 
         const [customFields, setCustomFields] = useState([]);
@@ -50,7 +38,7 @@ registerBlockType('custom-fields-block/custom-field', {
         }, [fieldKey]);
 
         const blockProps = useBlockProps({
-            className: `cfb-block ${alignment ? `has-text-align-${alignment}` : ''}`
+            className: 'cfb-block'
         });
 
         const updateFieldValue = (newFieldKey) => {
@@ -65,45 +53,6 @@ registerBlockType('custom-fields-block/custom-field', {
             }
         };
 
-        const updateTypography = (property, value) => {
-            setAttributes({
-                typography: {
-                    ...typography,
-                    [property]: value
-                }
-            });
-        };
-
-        const updateColors = (property, value) => {
-            setAttributes({
-                colors: {
-                    ...colors,
-                    [property]: value
-                }
-            });
-        };
-
-        const updateSpacing = (property, value) => {
-            setAttributes({
-                spacing: {
-                    ...spacing,
-                    [property]: value
-                }
-            });
-        };
-
-        // Build inline styles for preview
-        const previewStyles = {};
-        if (typography.fontSize) previewStyles.fontSize = `${typography.fontSize}px`;
-        if (typography.fontWeight) previewStyles.fontWeight = typography.fontWeight;
-        if (typography.lineHeight) previewStyles.lineHeight = typography.lineHeight;
-        if (typography.letterSpacing) previewStyles.letterSpacing = `${typography.letterSpacing}px`;
-        if (colors.textColor) previewStyles.color = colors.textColor;
-        if (colors.backgroundColor) previewStyles.backgroundColor = colors.backgroundColor;
-        if (spacing.marginTop) previewStyles.marginTop = `${spacing.marginTop}px`;
-        if (spacing.marginBottom) previewStyles.marginBottom = `${spacing.marginBottom}px`;
-        if (spacing.paddingTop) previewStyles.paddingTop = `${spacing.paddingTop}px`;
-        if (spacing.paddingBottom) previewStyles.paddingBottom = `${spacing.paddingBottom}px`;
 
         const renderPreview = () => {
             if (!fieldValue) {
@@ -116,13 +65,13 @@ registerBlockType('custom-fields-block/custom-field', {
                         backgroundColor: '#f9f9f9'
                     }}>
                         <div style={{ marginBottom: '15px' }}>
-                            <strong>{__('Custom Field Block', 'custom-fields-block')}</strong>
+                            <strong>{__('Custom Field Block', 'we-custom-fields-block')}</strong>
                         </div>
                         <SelectControl
-                            label={__('Custom Field auswählen:', 'custom-fields-block')}
+                            label={__('Select Custom Field:', 'we-custom-fields-block')}
                             value={fieldKey}
                             options={[
-                                { label: __('-- Feld auswählen --', 'custom-fields-block'), value: '' },
+                                { label: __('-- Select Field --', 'we-custom-fields-block'), value: '' },
                                 ...customFields.map(field => ({
                                     label: field.label,
                                     value: field.key
@@ -136,15 +85,20 @@ registerBlockType('custom-fields-block/custom-field', {
                             color: '#888',
                             fontStyle: 'italic'
                         }}>
-                            {__('Wählen Sie ein Custom Field aus der Liste oben aus', 'custom-fields-block')}
+                            {__('Please select a custom field from the list above', 'we-custom-fields-block')}
                         </div>
                     </div>
                 );
             }
 
-            const content = displayType === 'heading' ?
-                React.createElement(`h${headingLevel || 2}`, { style: previewStyles }, fieldValue) :
-                <p style={previewStyles}>{fieldValue}</p>;
+            let content;
+            if (displayType === 'heading') {
+                content = React.createElement(`h${headingLevel || 2}`, {}, fieldValue);
+            } else if (displayType === 'div') {
+                content = <div>{fieldValue}</div>;
+            } else {
+                content = <p>{fieldValue}</p>;
+            }
 
             return (
                 <div style={{ position: 'relative' }}>
@@ -163,10 +117,10 @@ registerBlockType('custom-fields-block/custom-field', {
                         minWidth: '200px'
                     }}>
                         <SelectControl
-                            label={__('Feld ändern:', 'custom-fields-block')}
+                            label={__('Change Field:', 'we-custom-fields-block')}
                             value={fieldKey}
                             options={[
-                                { label: __('-- Feld auswählen --', 'custom-fields-block'), value: '' },
+                                { label: __('-- Select Field --', 'we-custom-fields-block'), value: '' },
                                 ...customFields.map(field => ({
                                     label: field.label,
                                     value: field.key
@@ -181,20 +135,13 @@ registerBlockType('custom-fields-block/custom-field', {
 
         return (
             <>
-                <BlockControls>
-                    <AlignmentToolbar
-                        value={alignment}
-                        onChange={(newAlignment) => setAttributes({ alignment: newAlignment })}
-                    />
-                </BlockControls>
-
                 <InspectorControls>
-                    <PanelBody title={__('Custom Field Einstellungen', 'custom-fields-block')} initialOpen={true}>
+                    <PanelBody title={__('Custom Field Settings', 'we-custom-fields-block')} initialOpen={true}>
                         <SelectControl
-                            label={__('Custom Field auswählen', 'custom-fields-block')}
+                            label={__('Select Custom Field', 'we-custom-fields-block')}
                             value={fieldKey}
                             options={[
-                                { label: __('-- Feld auswählen --', 'custom-fields-block'), value: '' },
+                                { label: __('-- Select Field --', 'we-custom-fields-block'), value: '' },
                                 ...customFields.map(field => ({
                                     label: field.label,
                                     value: field.key
@@ -204,135 +151,33 @@ registerBlockType('custom-fields-block/custom-field', {
                         />
 
                         <SelectControl
-                            label={__('Anzeigetyp', 'custom-fields-block')}
+                            label={__('Display Type', 'we-custom-fields-block')}
                             value={displayType}
                             options={[
-                                { label: __('Absatz', 'custom-fields-block'), value: 'paragraph' },
-                                { label: __('Überschrift', 'custom-fields-block'), value: 'heading' }
+                                { label: __('Paragraph (p)', 'we-custom-fields-block'), value: 'paragraph' },
+                                { label: __('Heading (h1-h6)', 'we-custom-fields-block'), value: 'heading' },
+                                { label: __('Container (div)', 'we-custom-fields-block'), value: 'div' }
                             ]}
                             onChange={(value) => setAttributes({ displayType: value })}
                         />
 
                         {displayType === 'heading' && (
                             <SelectControl
-                                label={__('Überschriften-Ebene', 'custom-fields-block')}
+                                label={__('Heading Level', 'we-custom-fields-block')}
                                 value={headingLevel || 2}
                                 options={[
-                                    { label: __('H1 - Hauptüberschrift', 'custom-fields-block'), value: 1 },
-                                    { label: __('H2 - Unterüberschrift', 'custom-fields-block'), value: 2 },
-                                    { label: __('H3 - Unterunterüberschrift', 'custom-fields-block'), value: 3 },
-                                    { label: __('H4', 'custom-fields-block'), value: 4 },
-                                    { label: __('H5', 'custom-fields-block'), value: 5 },
-                                    { label: __('H6', 'custom-fields-block'), value: 6 }
+                                    { label: __('H1 - Main Heading', 'we-custom-fields-block'), value: 1 },
+                                    { label: __('H2 - Subheading', 'we-custom-fields-block'), value: 2 },
+                                    { label: __('H3 - Sub-subheading', 'we-custom-fields-block'), value: 3 },
+                                    { label: __('H4', 'we-custom-fields-block'), value: 4 },
+                                    { label: __('H5', 'we-custom-fields-block'), value: 5 },
+                                    { label: __('H6', 'we-custom-fields-block'), value: 6 }
                                 ]}
                                 onChange={(value) => setAttributes({ headingLevel: parseInt(value) })}
                             />
                         )}
                     </PanelBody>
 
-                    <PanelBody title={__('Typografie', 'custom-fields-block')} initialOpen={false}>
-                        <RangeControl
-                            label={__('Schriftgröße (px)', 'custom-fields-block')}
-                            value={typography.fontSize}
-                            onChange={(value) => updateTypography('fontSize', value)}
-                            min={12}
-                            max={72}
-                            step={1}
-                        />
-
-                        <SelectControl
-                            label={__('Schriftgewicht', 'custom-fields-block')}
-                            value={typography.fontWeight}
-                            options={[
-                                { label: __('Normal', 'custom-fields-block'), value: 'normal' },
-                                { label: __('Fett', 'custom-fields-block'), value: 'bold' },
-                                { label: __('100', 'custom-fields-block'), value: '100' },
-                                { label: __('200', 'custom-fields-block'), value: '200' },
-                                { label: __('300', 'custom-fields-block'), value: '300' },
-                                { label: __('400', 'custom-fields-block'), value: '400' },
-                                { label: __('500', 'custom-fields-block'), value: '500' },
-                                { label: __('600', 'custom-fields-block'), value: '600' },
-                                { label: __('700', 'custom-fields-block'), value: '700' },
-                                { label: __('800', 'custom-fields-block'), value: '800' },
-                                { label: __('900', 'custom-fields-block'), value: '900' }
-                            ]}
-                            onChange={(value) => updateTypography('fontWeight', value)}
-                        />
-
-                        <RangeControl
-                            label={__('Zeilenhöhe', 'custom-fields-block')}
-                            value={typography.lineHeight}
-                            onChange={(value) => updateTypography('lineHeight', value)}
-                            min={1}
-                            max={3}
-                            step={0.1}
-                        />
-
-                        <RangeControl
-                            label={__('Buchstabenabstand (px)', 'custom-fields-block')}
-                            value={typography.letterSpacing}
-                            onChange={(value) => updateTypography('letterSpacing', value)}
-                            min={-2}
-                            max={10}
-                            step={0.1}
-                        />
-                    </PanelBody>
-
-                    <PanelBody title={__('Farben', 'custom-fields-block')} initialOpen={false}>
-                        <div>
-                            <label>{__('Textfarbe', 'custom-fields-block')}</label>
-                            <ColorPalette
-                                value={colors.textColor}
-                                onChange={(value) => updateColors('textColor', value)}
-                            />
-                        </div>
-
-                        <div style={{ marginTop: '20px' }}>
-                            <label>{__('Hintergrundfarbe', 'custom-fields-block')}</label>
-                            <ColorPalette
-                                value={colors.backgroundColor}
-                                onChange={(value) => updateColors('backgroundColor', value)}
-                            />
-                        </div>
-                    </PanelBody>
-
-                    <PanelBody title={__('Abstände', 'custom-fields-block')} initialOpen={false}>
-                        <RangeControl
-                            label={__('Abstand oben (px)', 'custom-fields-block')}
-                            value={spacing.marginTop}
-                            onChange={(value) => updateSpacing('marginTop', value)}
-                            min={0}
-                            max={100}
-                            step={1}
-                        />
-
-                        <RangeControl
-                            label={__('Abstand unten (px)', 'custom-fields-block')}
-                            value={spacing.marginBottom}
-                            onChange={(value) => updateSpacing('marginBottom', value)}
-                            min={0}
-                            max={100}
-                            step={1}
-                        />
-
-                        <RangeControl
-                            label={__('Innenabstand oben (px)', 'custom-fields-block')}
-                            value={spacing.paddingTop}
-                            onChange={(value) => updateSpacing('paddingTop', value)}
-                            min={0}
-                            max={100}
-                            step={1}
-                        />
-
-                        <RangeControl
-                            label={__('Innenabstand unten (px)', 'custom-fields-block')}
-                            value={spacing.paddingBottom}
-                            onChange={(value) => updateSpacing('paddingBottom', value)}
-                            min={0}
-                            max={100}
-                            step={1}
-                        />
-                    </PanelBody>
                 </InspectorControls>
 
                 <div {...blockProps}>

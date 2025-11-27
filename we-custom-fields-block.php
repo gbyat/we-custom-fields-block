@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Plugin Name: Custom Fields Block
- * Plugin URI: https://github.com/gbyat/custom-fields-block
+ * Plugin Name: WE Custom Fields Block
+ * Plugin URI: https://github.com/gbyat/we-custom-fields-block
  * Description: Fügt native WordPress Custom Fields als Blöcke mit Typografie- und Farboptionen ein
- * Version: 1.2.15
+ * Version: 0.1.0
  * Author: Gabriele Laesser
  * License: GPL v2 or later
- * Text Domain: custom-fields-block
+ * Text Domain: we-custom-fields-block
  * Domain Path: /languages
- * Update URI: https://github.com/gbyat/custom-fields-block/releases/latest/download/custom-fields-block.zip
+ * Update URI: https://github.com/gbyat/we-custom-fields-block/releases/latest/download/we-custom-fields-block.zip
  */
 
 // Prevent direct access
@@ -18,10 +18,10 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('CFB_VERSION', '1.2.15');
+define('CFB_VERSION', '0.1.0');
 define('CFB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CFB_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('CFB_GITHUB_REPO', 'gbyat/custom-fields-block');
+define('CFB_GITHUB_REPO', 'gbyat/we-custom-fields-block');
 
 /**
  * Main plugin class
@@ -31,9 +31,8 @@ class CustomFieldsBlock
 
     public function __init__()
     {
-        add_action('init', array($this, 'init'));
+        // Editor assets for custom fields data
         add_action('enqueue_block_editor_assets', array($this, 'enqueue_block_editor_assets'));
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
 
         // Update system
         add_filter('pre_set_site_transient_update_plugins', array($this, 'check_for_updates'));
@@ -44,6 +43,8 @@ class CustomFieldsBlock
         add_action('admin_menu', array($this, 'remove_old_menu'), 5);
         add_action('admin_menu', array($this, 'add_admin_menu'), 10);
         add_action('admin_init', array($this, 'init_settings'));
+        add_action('plugins_loaded', array($this, 'load_textdomain'));
+        add_action('init', array($this, 'set_block_script_translations'), 20);
 
         // Cache management
         add_action('save_post', array($this, 'clear_custom_fields_cache'));
@@ -54,11 +55,56 @@ class CustomFieldsBlock
     }
 
     /**
+     * Load plugin translations
+     */
+    public function load_textdomain()
+    {
+        load_plugin_textdomain(
+            'we-custom-fields-block',
+            false,
+            dirname(plugin_basename(__FILE__)) . '/languages'
+        );
+    }
+
+    /**
+     * Set script translations for block editor scripts
+     */
+    public function set_block_script_translations()
+    {
+        if (!function_exists('wp_set_script_translations')) {
+            return;
+        }
+
+        $registry = \WP_Block_Type_Registry::get_instance();
+        $block_type = $registry->get_registered('we-custom-fields-block/custom-field');
+
+        if (!$block_type) {
+            return;
+        }
+
+        $languages_path = plugin_dir_path(__FILE__) . 'languages';
+
+        if (!empty($block_type->editor_script_handles)) {
+            foreach ($block_type->editor_script_handles as $handle) {
+                wp_set_script_translations($handle, 'we-custom-fields-block', $languages_path);
+            }
+            return;
+        }
+
+        $block_name_slug = str_replace('/', '-', 'we-custom-fields-block/custom-field');
+        wp_set_script_translations(
+            $block_name_slug . '-editor-script',
+            'we-custom-fields-block',
+            $languages_path
+        );
+    }
+
+    /**
      * Remove old admin menu to prevent conflicts
      */
     public function remove_old_menu()
     {
-        remove_submenu_page('options-general.php', 'custom-fields-block-settings');
+        remove_submenu_page('options-general.php', 'we-custom-fields-block-settings');
     }
 
     /**
@@ -132,7 +178,7 @@ class CustomFieldsBlock
             'sections' => array(
                 'description' => $latest_release['description'],
                 'changelog' => $latest_release['changelog'],
-                'installation' => 'Upload the plugin files to the /wp-content/plugins/custom-fields-block directory, or install the plugin through the WordPress plugins screen directly.',
+                'installation' => 'Upload the plugin files to the /wp-content/plugins/we-custom-fields-block directory, or install the plugin through the WordPress plugins screen directly.',
                 'screenshots' => ''
             )
         );
@@ -182,7 +228,7 @@ class CustomFieldsBlock
         // Find the plugin zip file
         $download_url = '';
         foreach ($release['assets'] as $asset) {
-            if ($asset['name'] === 'custom-fields-block.zip') {
+            if ($asset['name'] === 'we-custom-fields-block.zip') {
                 $download_url = $asset['browser_download_url'];
                 break;
             }
@@ -247,70 +293,33 @@ class CustomFieldsBlock
         }
     }
 
-    /**
-     * Initialize the plugin
-     */
-    public function init()
-    {
-        // Debug: Check if build directory exists
-        if (!file_exists(CFB_PLUGIN_DIR . 'build/block.json')) {
-            error_log('Custom Fields Block: build/block.json not found!');
-            return;
-        }
-
-        // Register block
-        $block_result = register_block_type(CFB_PLUGIN_DIR . 'build', array(
-            'render_callback' => array($this, 'render_block'),
-        ));
-
-        // Debug: Check if block registration was successful
-        if (!$block_result) {
-            error_log('Custom Fields Block: Failed to register block!');
-        } else {
-            error_log('Custom Fields Block: Block registered successfully!');
-        }
-
-        // Load text domain
-        load_plugin_textdomain('custom-fields-block', false, dirname(plugin_basename(__FILE__)) . '/languages');
-    }
 
     /**
      * Enqueue block editor assets
+     * Only for passing custom fields data to the editor
      */
     public function enqueue_block_editor_assets()
     {
-        wp_enqueue_script(
-            'custom-fields-block-editor',
-            CFB_PLUGIN_URL . 'build/index.js',
-            array('wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-i18n'),
-            CFB_VERSION
+        // The script handle is generated from block name in block.json
+        // Format: create_block_style_handle() uses the block name
+        // For "we-custom-fields-block/custom-field" it becomes "we-custom-fields-block-custom-field"
+
+        // Try different possible handles
+        $possible_handles = array(
+            'we-custom-fields-block-custom-field-editor-script',
+            'we-custom-fields-block-custom-field-script',
+            'we-custom-fields-block-editor',
         );
 
-        wp_enqueue_style(
-            'custom-fields-block-editor',
-            CFB_PLUGIN_URL . 'build/index.css',
-            array('wp-edit-blocks'),
-            CFB_VERSION
-        );
-
-        // Localize script with custom fields data
-        wp_localize_script('custom-fields-block-editor', 'cfbData', array(
-            'customFields' => $this->get_custom_fields(),
-            'nonce' => wp_create_nonce('cfb_nonce'),
-        ));
-    }
-
-    /**
-     * Enqueue frontend assets
-     */
-    public function enqueue_frontend_assets()
-    {
-        wp_enqueue_style(
-            'custom-fields-block-frontend',
-            CFB_PLUGIN_URL . 'build/style.css',
-            array(),
-            CFB_VERSION
-        );
+        foreach ($possible_handles as $handle) {
+            if (wp_script_is($handle, 'registered')) {
+                wp_localize_script($handle, 'cfbData', array(
+                    'customFields' => $this->get_custom_fields(),
+                    'nonce' => wp_create_nonce('cfb_nonce'),
+                ));
+                break;
+            }
+        }
     }
 
     /**
@@ -521,104 +530,6 @@ class CustomFieldsBlock
     }
 
     /**
-     * Render the block
-     */
-    public function render_block($attributes, $content)
-    {
-        $field_key = isset($attributes['fieldKey']) ? $attributes['fieldKey'] : '';
-        $display_type = isset($attributes['displayType']) ? $attributes['displayType'] : 'paragraph';
-        $heading_level = isset($attributes['headingLevel']) ? intval($attributes['headingLevel']) : 2;
-        $typography = isset($attributes['typography']) ? $attributes['typography'] : array();
-        $colors = isset($attributes['colors']) ? $attributes['colors'] : array();
-        $spacing = isset($attributes['spacing']) ? $attributes['spacing'] : array();
-        $alignment = isset($attributes['alignment']) ? $attributes['alignment'] : '';
-
-        if (empty($field_key)) {
-            return '';
-        }
-
-        $field_value = get_post_meta(get_the_ID(), $field_key, true);
-
-        if (empty($field_value)) {
-            return '';
-        }
-
-        // Build inline styles
-        $styles = array();
-
-        // Typography styles
-        if (!empty($typography)) {
-            if (!empty($typography['fontSize'])) {
-                $styles[] = 'font-size: ' . $typography['fontSize'] . 'px';
-            }
-            if (!empty($typography['fontWeight'])) {
-                $styles[] = 'font-weight: ' . $typography['fontWeight'];
-            }
-            if (!empty($typography['lineHeight'])) {
-                $styles[] = 'line-height: ' . $typography['lineHeight'];
-            }
-            if (!empty($typography['letterSpacing'])) {
-                $styles[] = 'letter-spacing: ' . $typography['letterSpacing'] . 'px';
-            }
-        }
-
-        // Color styles
-        if (!empty($colors)) {
-            if (!empty($colors['textColor'])) {
-                $styles[] = 'color: ' . $colors['textColor'];
-            }
-            if (!empty($colors['backgroundColor'])) {
-                $styles[] = 'background-color: ' . $colors['backgroundColor'];
-            }
-        }
-
-        // Spacing styles
-        if (!empty($spacing)) {
-            if (!empty($spacing['marginTop'])) {
-                $styles[] = 'margin-top: ' . $spacing['marginTop'] . 'px';
-            }
-            if (!empty($spacing['marginBottom'])) {
-                $styles[] = 'margin-bottom: ' . $spacing['marginBottom'] . 'px';
-            }
-            if (!empty($spacing['paddingTop'])) {
-                $styles[] = 'padding-top: ' . $spacing['paddingTop'] . 'px';
-            }
-            if (!empty($spacing['paddingBottom'])) {
-                $styles[] = 'padding-bottom: ' . $spacing['paddingBottom'] . 'px';
-            }
-        }
-
-        $style_attr = !empty($styles) ? ' style="' . esc_attr(implode('; ', $styles)) . '"' : '';
-
-        // Build classes
-        $classes = array('cfb-block');
-        if (!empty($alignment)) {
-            $classes[] = 'has-text-align-' . $alignment;
-        }
-        if (!empty($colors['textColor'])) {
-            $classes[] = 'has-text-color';
-        }
-        if (!empty($colors['backgroundColor'])) {
-            $classes[] = 'has-background';
-        }
-
-        $class_attr = ' class="' . esc_attr(implode(' ', $classes)) . '"';
-
-        // Render based on display type
-        switch ($display_type) {
-            case 'heading':
-                // Validate heading level (1-6)
-                $heading_level = max(1, min(6, $heading_level));
-                $tag = 'h' . $heading_level;
-                return '<' . $tag . $class_attr . $style_attr . '>' . esc_html($field_value) . '</' . $tag . '>';
-
-            case 'paragraph':
-            default:
-                return '<p' . $class_attr . $style_attr . '>' . esc_html($field_value) . '</p>';
-        }
-    }
-
-    /**
      * Add admin menu
      */
     public function add_admin_menu()
@@ -627,7 +538,7 @@ class CustomFieldsBlock
             'Custom Fields Block',
             'Custom Fields Block',
             'manage_options',
-            'custom-fields-block',
+            'we-custom-fields-block',
             array($this, 'admin_page')
         );
     }
@@ -706,15 +617,15 @@ class CustomFieldsBlock
             <h1>Custom Fields Block</h1>
 
             <nav class="nav-tab-wrapper">
-                <a href="?page=custom-fields-block&tab=custom-fields"
+                <a href="?page=we-custom-fields-block&tab=custom-fields"
                     class="nav-tab <?php echo $active_tab === 'custom-fields' ? 'nav-tab-active' : ''; ?>">
                     Custom Fields Manager
                 </a>
-                <a href="?page=custom-fields-block&tab=settings"
+                <a href="?page=we-custom-fields-block&tab=settings"
                     class="nav-tab <?php echo $active_tab === 'settings' ? 'nav-tab-active' : ''; ?>">
                     Settings
                 </a>
-                <a href="?page=custom-fields-block&tab=debug"
+                <a href="?page=we-custom-fields-block&tab=debug"
                     class="nav-tab <?php echo $active_tab === 'debug' ? 'nav-tab-active' : ''; ?>">
                     Debug Info
                 </a>
@@ -929,7 +840,7 @@ class CustomFieldsBlock
                                         $has_zip = false;
                                         if (isset($release['assets']) && is_array($release['assets'])) {
                                             foreach ($release['assets'] as $asset) {
-                                                if (isset($asset['name']) && $asset['name'] === 'custom-fields-block.zip') {
+                                                if (isset($asset['name']) && $asset['name'] === 'we-custom-fields-block.zip') {
                                                     $has_zip = true;
                                                     break;
                                                 }
@@ -1099,3 +1010,67 @@ class CustomFieldsBlock
 // Initialize the plugin
 $custom_fields_block = new CustomFieldsBlock();
 $custom_fields_block->__init__();
+
+// Register block directly in init hook
+add_action('init', function () {
+    register_block_type(CFB_PLUGIN_DIR . '/build', array(
+        'render_callback' => 'cfb_render_block'
+    ));
+});
+
+// Render callback function
+function cfb_render_block($attributes, $content, $block)
+{
+    // Get block attributes
+    $field_key = isset($attributes['fieldKey']) ? $attributes['fieldKey'] : '';
+    $display_type = isset($attributes['displayType']) ? $attributes['displayType'] : 'paragraph';
+    $heading_level = isset($attributes['headingLevel']) ? intval($attributes['headingLevel']) : 2;
+
+    // Return early if no field key
+    if (empty($field_key)) {
+        return '';
+    }
+
+    // Get field value
+    $field_value = get_post_meta(get_the_ID(), $field_key, true);
+
+    // Return early if no value
+    if (empty($field_value)) {
+        return '';
+    }
+
+    // Get block wrapper attributes (includes all theme styles)
+    $wrapper_attributes = get_block_wrapper_attributes(array(
+        'class' => 'cfb-block'
+    ));
+
+    // Render based on display type
+    switch ($display_type) {
+        case 'heading':
+            // Validate heading level (1-6)
+            $heading_level = max(1, min(6, $heading_level));
+            $tag = 'h' . $heading_level;
+
+            return sprintf(
+                '<%1$s %2$s>%3$s</%1$s>',
+                $tag,
+                $wrapper_attributes,
+                esc_html($field_value)
+            );
+
+        case 'div':
+            return sprintf(
+                '<div %s>%s</div>',
+                $wrapper_attributes,
+                esc_html($field_value)
+            );
+
+        case 'paragraph':
+        default:
+            return sprintf(
+                '<p %s>%s</p>',
+                $wrapper_attributes,
+                esc_html($field_value)
+            );
+    }
+}

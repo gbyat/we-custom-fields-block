@@ -1,28 +1,14 @@
 {
-  "apiVersion": 2,
-  "name": "custom-fields-block/custom-field",
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "we-custom-fields-block/custom-field",
   "title": "Custom Field",
   "category": "widgets",
   "icon": "admin-customizer",
-  "description": "Fügt ein natives WordPress Custom Field als Block ein",
-  "supports": {
-    "html": false,
-    "align": ["left", "center", "right", "wide"],
-    "color": {
-      "text": true,
-      "background": true
-    },
-    "typography": {
-      "fontSize": true,
-      "lineHeight": true,
-      "fontWeight": true,
-      "letterSpacing": true
-    },
-    "spacing": {
-      "margin": ["top", "bottom"],
-      "padding": ["top", "bottom"]
-    }
-  },
+  "description": "Displays a native WordPress custom field as a block",
+  "keywords": ["custom field", "meta", "field"],
+  "version": "0.1.0",
+  "textdomain": "we-custom-fields-block",
   "attributes": {
     "fieldKey": {
       "type": "string",
@@ -35,25 +21,38 @@
     "headingLevel": {
       "type": "number",
       "default": 2
-    },
-    "typography": {
-      "type": "object",
-      "default": {}
-    },
-    "colors": {
-      "type": "object",
-      "default": {}
-    },
-    "spacing": {
-      "type": "object",
-      "default": {}
-    },
-    "alignment": {
-      "type": "string",
-      "default": ""
     }
   },
-  "textdomain": "custom-fields-block",
+  "supports": {
+    "html": false,
+    "align": ["left", "center", "right", "wide", "full"],
+    "alignText": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "gradients": true,
+      "link": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "fontWeight": true,
+      "fontStyle": true,
+      "textTransform": true,
+      "textDecoration": true,
+      "letterSpacing": true,
+      "fontFamily": true,
+      "textAlign": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "layout": {
+      "allowEditing": false
+    }
+  },
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",
   "style": "file:./style.css"
