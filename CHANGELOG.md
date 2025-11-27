@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Update CHANGELOG to reflect plugin renaming, versioning improvements, and enhance release links for v0.1.10 and v0.1.11.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

@@ -71,6 +71,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         // Get current date
         const dateStr = new Date().toISOString().split('T')[0];
 
+        // Extract all commit messages already in CHANGELOG to avoid duplicates
+        const existingCommits = new Set();
+        const changelogLines = changelogContent.split('\n');
+        changelogLines.forEach(line => {
+            // Match lines that start with "- " (changelog entries)
+            const match = line.match(/^-\s+(.+)$/);
+            if (match) {
+                const commitMsg = match[1].trim();
+                existingCommits.add(commitMsg);
+            }
+        });
+
         // Get git commits since last tag
         let gitLog = '';
         try {
@@ -92,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 ? `git log ${lastTag}..HEAD --oneline --pretty=format:"%s" --no-merges`
                 : 'git log -20 --oneline --pretty=format:"%s" --no-merges';
 
-            let commits = execSync(gitCommand, {
+            let allCommits = execSync(gitCommand, {
                 encoding: 'utf8',
                 stdio: ['pipe', 'pipe', 'ignore']
             }).trim().split('\n').filter(line => {
@@ -104,9 +116,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                     !trimmed.match(/^Version update$/i);
             });
 
+            // Filter out commits that are already in CHANGELOG
+            const newCommits = allCommits.filter(commit => {
+                const trimmed = commit.trim();
+                return !existingCommits.has(trimmed);
+            });
+
             // Format as changelog entries
-            if (commits.length > 0) {
-                gitLog = commits.map(commit => `- ${commit.trim()}`).join('\n');
+            if (newCommits.length > 0) {
+                gitLog = newCommits.map(commit => `- ${commit.trim()}`).join('\n');
             } else {
                 gitLog = '';
             }
@@ -142,8 +160,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                         !trimmed.match(/^Version update$/i);
                 });
 
-                if (allCommits.length > 0) {
-                    changelogEntry = allCommits.slice(0, 10).map(commit => `- ${commit.trim()}`).join('\n');
+                // Filter out commits that are already in CHANGELOG
+                const newCommits = allCommits.filter(commit => {
+                    const trimmed = commit.trim();
+                    return !existingCommits.has(trimmed);
+                });
+
+                if (newCommits.length > 0) {
+                    changelogEntry = newCommits.slice(0, 10).map(commit => `- ${commit.trim()}`).join('\n');
                 } else {
                     changelogEntry = '- Version update';
                 }
