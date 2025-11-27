@@ -21,9 +21,9 @@ class CFB_Updates
             return $transient;
         }
 
-        $plugin_slug = basename(CFB_PLUGIN_DIR);
-        $plugin_file = 'we-custom-fields-block.php';
-        $plugin_path = $plugin_slug . '/' . $plugin_file;
+        // Get plugin path the way WordPress expects it
+        $plugin_file = plugin_basename(CFB_PLUGIN_DIR . 'we-custom-fields-block.php');
+        $plugin_slug = dirname($plugin_file);
 
         // Remove old plugin entries (from custom-fields-block)
         $old_paths = array(
@@ -40,7 +40,7 @@ class CFB_Updates
         $latest_release = $this->get_latest_release();
 
         if ($latest_release && version_compare($latest_release['version'], CFB_VERSION, '>')) {
-            $transient->response[$plugin_path] = (object) array(
+            $transient->response[$plugin_file] = (object) array(
                 'slug' => $plugin_slug,
                 'new_version' => $latest_release['version'],
                 'url' => 'https://github.com/' . CFB_GITHUB_REPO,
@@ -50,8 +50,7 @@ class CFB_Updates
                 'tested' => '6.4',
                 'last_updated' => $latest_release['published_at'],
                 'sections' => array(
-                    'description' => $latest_release['description'],
-                    'changelog' => $latest_release['changelog']
+                    'description' => $latest_release['description']
                 )
             );
         }
@@ -68,7 +67,8 @@ class CFB_Updates
             return $result;
         }
 
-        $plugin_slug = basename(CFB_PLUGIN_DIR);
+        $plugin_file = plugin_basename(CFB_PLUGIN_DIR . 'we-custom-fields-block.php');
+        $plugin_slug = dirname($plugin_file);
 
         if ($args->slug !== $plugin_slug) {
             return $result;
@@ -93,7 +93,6 @@ class CFB_Updates
             'download_link' => $latest_release['download_url'],
             'sections' => array(
                 'description' => $latest_release['description'],
-                'changelog' => $latest_release['changelog'],
                 'installation' => 'Upload the plugin files to the /wp-content/plugins/we-custom-fields-block directory, or install the plugin through the WordPress plugins screen directly.',
                 'screenshots' => ''
             )
@@ -186,14 +185,12 @@ class CFB_Updates
         delete_transient('cfb_latest_release');
 
         // Remove only this plugin from update_plugins transient
-        $plugin_slug = basename(CFB_PLUGIN_DIR);
-        $plugin_file = 'we-custom-fields-block.php';
-        $plugin_path = $plugin_slug . '/' . $plugin_file;
+        $plugin_file = plugin_basename(CFB_PLUGIN_DIR . 'we-custom-fields-block.php');
 
         $update_plugins = get_site_transient('update_plugins');
         if ($update_plugins && is_object($update_plugins)) {
-            if (isset($update_plugins->response[$plugin_path])) {
-                unset($update_plugins->response[$plugin_path]);
+            if (isset($update_plugins->response[$plugin_file])) {
+                unset($update_plugins->response[$plugin_file]);
                 set_site_transient('update_plugins', $update_plugins);
             }
             // Also check for old plugin name (custom-fields-block)

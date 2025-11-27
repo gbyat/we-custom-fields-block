@@ -168,5 +168,4 @@ jobs:
           gh auth setup-git
           gh release create ${GITHUB_REF#refs/tags/} \
             --title "Release ${VERSION}" \
-            --notes-file CHANGELOG.md \
             we-custom-fields-block.zip
