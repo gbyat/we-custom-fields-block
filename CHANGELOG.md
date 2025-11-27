@@ -11,16 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove temporary files from repository and add to .gitignore
 - Remove package-lock.json from repository and add to .gitignore
 - Refactor and rename plugin to "we-custom-fields-block"; update versioning and documentation. Remove obsolete files and enhance block functionality with improved attributes and styles.
-- 1.2.15
-- Add heading level selection (H1-H6) for custom field blocks
-- 1.2.14
-- Add enhanced debug information with version comparison and API testing
-
 
 ## [0.1.10] - 2025-11-27
 
 - Update README and CHANGELOG for plugin renaming and versioning improvements; enhance sync-version script to filter commits and improve changelog generation.
-
 
 ## [0.1.9] - 2025-11-27
 
@@ -57,10 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-11-27
 
 - Refactor and rename plugin to "we-custom-fields-block"; update versioning and documentation. Remove obsolete files and enhance block functionality with improved attributes and styles.
-- Bump version to $(node -p 'require(\'./package.json\').version')
 
 ## [0.1.0] - 2025-11-27
 
 - Bump version to $(node -p 'require(\'./package.json\').version')
-[0.1.10]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.10
-[0.1.11]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.11
+  [0.1.10]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.10
+  [0.1.11]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.11
