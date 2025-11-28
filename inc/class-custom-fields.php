@@ -283,7 +283,7 @@ class CFB_Custom_Fields
 
         if (!isset($_POST['fields_to_delete']) || !is_array($_POST['fields_to_delete'])) {
             add_action('admin_notices', function () {
-                echo '<div class="notice notice-error"><p>No fields selected for deletion.</p></div>';
+                echo '<div class="notice notice-error"><p>' . esc_html__('No fields selected for deletion.', 'we-custom-fields-block') . '</p></div>';
             });
             return;
         }
@@ -317,7 +317,7 @@ class CFB_Custom_Fields
         add_action('admin_notices', function () use ($deleted_count, $posts_affected) {
             echo '<div class="notice notice-success"><p>';
             echo sprintf(
-                'Successfully deleted %d custom field(s) from %d post(s).',
+                __('Successfully deleted %d custom field(s) from %d post(s).', 'we-custom-fields-block'),
                 $deleted_count,
                 $posts_affected
             );
@@ -344,7 +344,7 @@ class CFB_Custom_Fields
         set_transient('cfb_all_custom_fields', $fields, 3600);
 
         add_action('admin_notices', function () use ($fields) {
-            echo '<div class="notice notice-success"><p>Found ' . count($fields) . ' custom fields!</p></div>';
+            echo '<div class="notice notice-success"><p>' . sprintf(__('Found %d custom fields!', 'we-custom-fields-block'), count($fields)) . '</p></div>';
         });
     }
 

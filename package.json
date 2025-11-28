@@ -1,6 +1,6 @@
 {
   "name": "we-custom-fields-block",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "WordPress plugin to display native custom fields as blocks with typography and color options",
   "main": "build/index.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "release:major": "node scripts/release.js major",
     "sync-version": "node scripts/sync-version.js",
     "make-pot": "node scripts/create-pot.js",
+    "pot": "node scripts/create-pot.js",
     "po-to-jed": "node scripts/po-to-jed.js",
     "hash-json": "node scripts/hash-json.js"
   },

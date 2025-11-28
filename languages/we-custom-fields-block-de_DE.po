@@ -6,8 +6,8 @@ msgstr ""
 "Project-Id-Version: Custom Fields Block 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/gbyat/we-custom-fields-block/"
 "issues\n"
-"POT-Creation-Date: 2025-11-27 08:02:50+0000\n"
-"PO-Revision-Date: 2025-11-27 10:42+0100\n"
+"POT-Creation-Date: 2025-11-28 17:06:58+0000\n"
+"PO-Revision-Date: 2025-11-28 18:11+0100\n"
 "Last-Translator: \n"
 "Language-Team: German\n"
 "Language: de_DE\n"
@@ -21,13 +21,89 @@ msgstr ""
 msgid "-- Select Field --"
 msgstr "-- Feld auswählen --"
 
+#: inc/class-admin.php:230
+msgid "Actions"
+msgstr "Aktionen"
+
+#: inc/class-admin.php:527
+msgid "Active"
+msgstr "Aktiv"
+
+#: inc/class-admin.php:504
+msgid "API Error:"
+msgstr "API Fehler:"
+
+#: inc/class-admin.php:209
+msgid ""
+"Are you sure you want to delete the selected custom fields from ALL posts? "
+"This action cannot be undone!"
+msgstr ""
+"Sind Sie sicher, dass Sie die ausgewählten benutzerdefinierten Felder aus "
+"ALLEN Beiträgen löschen möchten? Diese Aktion kann nicht rückgängig "
+"gemacht werden!"
+
+#: inc/class-admin.php:571
+msgid "Cache Management"
+msgstr "Cache-Verwaltung"
+
+#: inc/class-admin.php:522
+msgid "Cache Status"
+msgstr "Cachestatus"
+
+#: inc/class-admin.php:518
+msgid "Cached Fields"
+msgstr "Gecachte Felder:"
+
 #: src/index.js:120
 msgid "Change Field:"
 msgstr "Feld ändern:"
 
+#: inc/class-admin.php:203
+msgid "Changes are auto-saved when you check/uncheck fields."
+msgstr ""
+"Änderungen werden automatisch gespeichert, wenn Sie Felder aktivieren/"
+"deaktivieren."
+
+#: inc/class-admin.php:590
+msgid "Check for Updates"
+msgstr "Auf Aktualisierung prüfen"
+
+#: inc/class-admin.php:186
+msgid "Clear Cache"
+msgstr "Cache löschen"
+
+#: inc/class-admin.php:585
+msgid "Clear Custom Fields Cache"
+msgstr "Cache benutzerdefinierter Felder löschen"
+
+#: inc/class-admin.php:577
+msgid "Clear Update Cache"
+msgstr "Lösche Plugin-Cache"
+
+#: inc/class-admin.php:81
+msgid "Configure GitHub integration for automatic plugin updates."
+msgstr ""
+"Konfigurieren Sie die GitHub-Integration für automatische Plugin-Updates."
+
 #: src/index.js:159
 msgid "Container (div)"
 msgstr "Container (div)"
+
+#: inc/class-admin.php:270
+msgid "Copy Key"
+msgstr "Copy-Taste"
+
+#: inc/class-admin.php:442
+msgid "Could not fetch latest release"
+msgstr "Die neueste Version konnte nicht abgerufen werden."
+
+#: inc/class-admin.php:501
+msgid "Could not parse release data"
+msgstr "Die Release-Daten konnten nicht analysiert werden."
+
+#: inc/class-admin.php:428
+msgid "Current Version"
+msgstr "Aktuelle Version"
 
 #: src/index.js:68
 msgid "Custom Field Block"
@@ -37,9 +113,98 @@ msgstr "Custom Field Block"
 msgid "Custom Field Settings"
 msgstr "Benutzerdefinierte Felder Einstellungen"
 
+#: inc/class-admin.php:38
+msgid "Custom Fields Block"
+msgstr "Custom Field Block"
+
+#: inc/class-admin.php:515
+msgid "Custom Fields Cache"
+msgstr "Cache benutzerdefinierter Felder"
+
+#: inc/class-admin.php:131
+msgid "Custom Fields Manager"
+msgstr "Benutzerdefinierten Fields-Manager"
+
+#: inc/class-admin.php:139
+msgid "Debug Info"
+msgstr "Debug Info"
+
+#: inc/class-admin.php:423
+msgid "Debug Information"
+msgstr "Debug Informationen"
+
+#: inc/class-admin.php:217
+msgid "Delete Selected Fields"
+msgstr "Ausgewählte Felder löschen (!!!)"
+
+#: inc/class-admin.php:215
+msgid "Deselect All"
+msgstr "Alle abwählen"
+
+#: inc/class-admin.php:226
+msgid "Display Name"
+msgstr "Angezeigter Name"
+
 #: src/index.js:154
 msgid "Display Type"
 msgstr "Autor"
+
+#: inc/class-admin.php:529
+msgid "Empty"
+msgstr "Leer"
+
+#: inc/class-admin.php:91
+msgid "Enter your GitHub Personal Access Token for automatic updates."
+msgstr ""
+"Geben Sie Ihren persönlichen GitHub-Zugriffstoken für automatische Updates "
+"ein."
+
+#: inc/class-admin.php:229
+msgid "Exclude from Block"
+msgstr "Aus Block ausschließen"
+
+#: inc/class-admin.php:659
+msgid ""
+"Exclude settings saved! %d field(s) will be hidden from the block dropdown."
+msgstr ""
+"Ausschluss-Einstellungen gespeichert! %d Feld(er) werden aus der Block-"
+"Dropdown-Liste ausgeblendet."
+
+#: inc/class-admin.php:225
+msgid "Field Key"
+msgstr "Feldschlüssel"
+
+#: inc/class-admin.php:519
+msgid "fields"
+msgstr "Felder"
+
+#: inc/class-admin.php:192
+msgid "Found %d custom fields"
+msgstr "%d benutzerdefinierte Felder gefunden"
+
+#: inc/class-custom-fields.php:347
+msgid "Found %d custom fields!"
+msgstr "%d benutzerdefinierte Felder gefunden!"
+
+#: inc/class-admin.php:457
+msgid "GitHub API Test"
+msgstr "GitHub-API-Test"
+
+#: inc/class-admin.php:66
+msgid "GitHub Personal Access Token"
+msgstr "Privater GitHub Access-Token"
+
+#: inc/class-admin.php:566
+msgid "GitHub Repository"
+msgstr "GitHub-Repository"
+
+#: inc/class-admin.php:397
+msgid "GitHub Token"
+msgstr "GitHub-Token"
+
+#: inc/class-admin.php:59
+msgid "GitHub Update Settings"
+msgstr "GitHub-Einstellungen aktualisieren"
 
 #: src/index.js:169
 msgid "H1 - Main Heading"
@@ -73,14 +238,90 @@ msgstr "Überschrift (h1-h6)"
 msgid "Heading Level"
 msgstr "Überschriften-Ebene"
 
+#: inc/class-admin.php:264
+msgid "Hidden"
+msgstr "Ausgeblendet"
+
+#: inc/class-admin.php:487
+msgid "Latest Release:"
+msgstr "Neueste Veröffentlichung:"
+
+#: inc/class-admin.php:432
+msgid "Latest Version"
+msgstr "Neuste Version"
+
+#: inc/class-admin.php:499
+msgid "Missing"
+msgstr "Fehlend"
+
+#: inc/class-custom-fields.php:286
+msgid "No fields selected for deletion."
+msgstr "Es wurden keine Felder zum Löschen ausgewählt."
+
+#: inc/class-admin.php:452
+msgid "Not set"
+msgstr "Nicht eingestellt"
+
 #: src/index.js:157
 msgid "Paragraph (p)"
 msgstr "Absatz (p)"
+
+#: inc/class-admin.php:402
+msgid "Personal Access Token for automatic plugin updates"
+msgstr "Persönlicher Zugriffstoken für automatische Plugin-Updates"
+
+#: inc/class-admin.php:554
+msgid "PHP Version"
+msgstr "PHP-Version"
 
 #: src/index.js:88
 msgid "Please select a custom field from the list above"
 msgstr ""
 "Bitte wählen Sie ein benutzerdefiniertes Feld aus der obigen Liste aus."
+
+#: inc/class-admin.php:558
+msgid "Plugin Directory"
+msgstr "Plugin-Verzeichnis"
+
+#: inc/class-admin.php:562
+msgid "Plugin URL"
+msgstr "Plugin URL"
+
+#: inc/class-admin.php:228
+msgid "Posts Count"
+msgstr "Beitragsanzahl"
+
+#: inc/class-admin.php:499
+msgid "Present"
+msgstr "Anwesend"
+
+#: inc/class-admin.php:204
+msgid "Reload the block editor page"
+msgstr "Laden Sie die Block-Editor-Seite neu."
+
+#: inc/class-admin.php:480
+msgid "Response Code:"
+msgstr "Antwort Code:"
+
+#: inc/class-admin.php:227
+msgid "Sample Value"
+msgstr "Beispiel Wert"
+
+#: inc/class-admin.php:200
+msgid "Save Exclude Settings"
+msgstr "Ausschluss-Einstellungen speichern"
+
+#: inc/class-admin.php:407
+msgid "Save Settings"
+msgstr "Einstellungen speichern"
+
+#: inc/class-admin.php:178
+msgid "Scan Custom Fields"
+msgstr "Nach benutzerdefinierten Feldern suchen"
+
+#: inc/class-admin.php:214
+msgid "Select All"
+msgstr "Alles auswählen"
 
 #: src/index.js:141
 msgid "Select Custom Field"
@@ -90,6 +331,58 @@ msgstr "Benutzerdefiniertes Feld auswählen"
 msgid "Select Custom Field:"
 msgstr "Benutzerdefiniertes Feld auswählen:"
 
+#: inc/class-admin.php:450
+msgid "Set"
+msgstr "Set"
+
+#: inc/class-admin.php:135
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: inc/class-admin.php:632
+msgid "Settings saved successfully!"
+msgstr "Einstellungen erfolgreich gespeichert!"
+
+#: inc/class-custom-fields.php:320
+msgid "Successfully deleted %d custom field(s) from %d post(s)."
+msgstr "%d benutzerdefinierte Felder aus %d Beiträgen erfolgreich gelöscht."
+
+#: inc/class-admin.php:547
+msgid "System Information"
+msgstr "Systeminformationen"
+
+#: inc/class-admin.php:205
+msgid "to see the changes in the block dropdown."
+msgstr "um die Änderungen im Block-Dropdown-Menü zu sehen."
+
+#: inc/class-admin.php:439
+msgid "Up to date"
+msgstr "Aktuell"
+
+#: inc/class-admin.php:437
+msgid "Update available!"
+msgstr "Update verfügbar!"
+
+#: inc/class-admin.php:534
+msgid "Update Cache"
+msgstr "Cache aktualisieren"
+
+#: inc/class-admin.php:425
+msgid "Update System"
+msgstr "System aktualisieren"
+
+#: inc/class-admin.php:264
+msgid "Visible"
+msgstr "Sichtbar"
+
+#: inc/class-admin.php:550
+msgid "WordPress Version"
+msgstr "WordPress Version"
+
+#: inc/class-admin.php:499
+msgid "ZIP Asset:"
+msgstr "ZIP-Asset:"
+
 #~ msgid "Fügt ein natives WordPress Custom Field als Block ein"
 #~ msgstr "Fügt ein natives WordPress Custom Field als Block ein"
 
@@ -98,9 +391,6 @@ msgstr "Benutzerdefiniertes Feld auswählen:"
 
 #~ msgid "Custom Field Einstellungen"
 #~ msgstr "Custom Field Einstellungen"
-
-#~ msgid "Custom Field auswählen"
-#~ msgstr "Custom Field auswählen"
 
 #~ msgid "-- Feld auswählen --"
 #~ msgstr "-- Feld auswählen --"
