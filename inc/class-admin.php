@@ -113,6 +113,9 @@ class CFB_Admin
                 case 'delete_custom_fields':
                     $this->custom_fields->delete_custom_fields();
                     break;
+                case 'save_excluded_fields':
+                    $this->save_excluded_fields();
+                    break;
             }
         }
 ?>
@@ -158,7 +161,8 @@ class CFB_Admin
      */
     private function custom_fields_tab()
     {
-        $custom_fields = $this->custom_fields->get_custom_fields();
+        // Get all fields including excluded ones for admin display
+        $custom_fields = $this->custom_fields->get_custom_fields(false);
     ?>
         <div class="tab-pane">
             <h2>Custom Fields Manager</h2>
@@ -186,6 +190,14 @@ class CFB_Admin
             </div>
 
             <?php if (!empty($custom_fields)): ?>
+                <form method="post" id="exclude-fields-form">
+                    <input type="hidden" name="action" value="save_excluded_fields">
+                    <?php wp_nonce_field('cfb_save_excluded_fields', 'cfb_nonce'); ?>
+                    <button type="submit" class="button button-primary" style="margin-bottom: 20px;">
+                        💾 Save Exclude Settings
+                    </button>
+                </form>
+
                 <form method="post" id="delete-fields-form" onsubmit="return confirm('Are you sure you want to delete the selected custom fields from ALL posts? This action cannot be undone!');">
                     <input type="hidden" name="action" value="delete_custom_fields">
                     <?php wp_nonce_field('cfb_delete_fields', 'cfb_nonce'); ?>
@@ -206,14 +218,18 @@ class CFB_Admin
                                 <th>Display Name</th>
                                 <th>Sample Value</th>
                                 <th>Posts Count</th>
+                                <th style="width: 150px;">Exclude from Block</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($custom_fields as $field):
+                            <?php
+                            $excluded_fields = $this->custom_fields->get_excluded_fields();
+                            foreach ($custom_fields as $field):
                                 $posts_count = $this->custom_fields->count_posts_with_field($field['key']);
+                                $is_excluded = in_array($field['key'], $excluded_fields);
                             ?>
-                                <tr>
+                                <tr <?php echo $is_excluded ? 'style="opacity: 0.6; background-color: #f0f0f0;"' : ''; ?>>
                                     <td>
                                         <input type="checkbox" name="fields_to_delete[]" value="<?php echo esc_attr($field['key']); ?>" class="field-checkbox">
                                     </td>
@@ -227,6 +243,19 @@ class CFB_Admin
                                     </td>
                                     <td>
                                         <strong><?php echo $posts_count; ?></strong> post(s)
+                                    </td>
+                                    <td>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox"
+                                                name="excluded_fields[]"
+                                                value="<?php echo esc_attr($field['key']); ?>"
+                                                form="exclude-fields-form"
+                                                <?php checked($is_excluded); ?>
+                                                onchange="updateRowStyle(this)">
+                                            <span style="font-size: 12px; color: #666;">
+                                                <?php echo $is_excluded ? 'Hidden' : 'Visible'; ?>
+                                            </span>
+                                        </label>
                                     </td>
                                     <td>
                                         <button type="button" class="button button-small" onclick="copyToClipboard('<?php echo esc_js($field['key']); ?>')">
@@ -267,6 +296,20 @@ class CFB_Admin
             function deselectAllFields() {
                 document.getElementById('select-all').checked = false;
                 toggleAllFields(false);
+            }
+
+            function updateRowStyle(checkbox) {
+                var row = checkbox.closest('tr');
+                var label = checkbox.nextElementSibling;
+                if (checkbox.checked) {
+                    row.style.opacity = '0.6';
+                    row.style.backgroundColor = '#f0f0f0';
+                    label.textContent = 'Hidden';
+                } else {
+                    row.style.opacity = '1';
+                    row.style.backgroundColor = '';
+                    label.textContent = 'Visible';
+                }
             }
         </script>
     <?php
@@ -523,6 +566,36 @@ class CFB_Admin
 
         add_action('admin_notices', function () {
             echo '<div class="notice notice-success"><p>Settings saved successfully!</p></div>';
+        });
+    }
+
+    /**
+     * Save excluded fields
+     */
+    private function save_excluded_fields()
+    {
+        if (!wp_verify_nonce($_POST['cfb_nonce'], 'cfb_save_excluded_fields')) {
+            wp_die('Security check failed');
+        }
+
+        $excluded_fields = array();
+        if (isset($_POST['excluded_fields']) && is_array($_POST['excluded_fields'])) {
+            $excluded_fields = array_map('sanitize_text_field', $_POST['excluded_fields']);
+        }
+
+        update_option('cfb_excluded_fields', $excluded_fields);
+
+        // Clear cache to refresh block dropdown
+        $this->custom_fields->clear_custom_fields_cache();
+
+        add_action('admin_notices', function () use ($excluded_fields) {
+            $count = count($excluded_fields);
+            echo '<div class="notice notice-success"><p>';
+            echo sprintf(
+                'Exclude settings saved! %d field(s) will be hidden from the block dropdown.',
+                $count
+            );
+            echo '</p></div>';
         });
     }
 }

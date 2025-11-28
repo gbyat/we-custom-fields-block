@@ -14,8 +14,9 @@ class CFB_Custom_Fields
 {
     /**
      * Get all custom fields for the current post
+     * @param bool $exclude_hidden Whether to exclude fields marked as hidden in admin
      */
-    public function get_custom_fields()
+    public function get_custom_fields($exclude_hidden = true)
     {
         // Try to get cached custom fields first
         $cached_fields = get_transient('cfb_all_custom_fields');
@@ -25,32 +26,43 @@ class CFB_Custom_Fields
             $cached_fields = array_filter($cached_fields, function ($field) {
                 return strpos($field['key'], '_') !== 0;
             });
-            return array_values($cached_fields);
-        }
+            $cached_fields = array_values($cached_fields);
+        } else {
+            // If no cache or empty cache, build it
+            $cached_fields = $this->build_custom_fields_cache();
 
-        // If no cache or empty cache, build it
-        $fields = $this->build_custom_fields_cache();
-
-        // Filter out any fields starting with _ (additional safety)
-        $fields = array_filter($fields, function ($field) {
-            return strpos($field['key'], '_') !== 0;
-        });
-        $fields = array_values($fields);
-
-        // Cache for 1 hour
-        set_transient('cfb_all_custom_fields', $fields, 3600);
-
-        // If still no fields, try a simple fallback
-        if (empty($fields)) {
-            $fields = $this->get_fallback_custom_fields();
-            // Filter fallback results as well
-            $fields = array_filter($fields, function ($field) {
+            // Filter out any fields starting with _ (additional safety)
+            $cached_fields = array_filter($cached_fields, function ($field) {
                 return strpos($field['key'], '_') !== 0;
             });
-            $fields = array_values($fields);
+            $cached_fields = array_values($cached_fields);
+
+            // Cache for 1 hour
+            set_transient('cfb_all_custom_fields', $cached_fields, 3600);
+
+            // If still no fields, try a simple fallback
+            if (empty($cached_fields)) {
+                $cached_fields = $this->get_fallback_custom_fields();
+                // Filter fallback results as well
+                $cached_fields = array_filter($cached_fields, function ($field) {
+                    return strpos($field['key'], '_') !== 0;
+                });
+                $cached_fields = array_values($cached_fields);
+            }
         }
 
-        return $fields;
+        // Filter out excluded fields if requested (for block dropdown)
+        if ($exclude_hidden) {
+            $excluded_fields = get_option('cfb_excluded_fields', array());
+            if (!empty($excluded_fields) && is_array($excluded_fields)) {
+                $cached_fields = array_filter($cached_fields, function ($field) use ($excluded_fields) {
+                    return !in_array($field['key'], $excluded_fields);
+                });
+                $cached_fields = array_values($cached_fields);
+            }
+        }
+
+        return $cached_fields;
     }
 
     /**
@@ -334,5 +346,22 @@ class CFB_Custom_Fields
         add_action('admin_notices', function () use ($fields) {
             echo '<div class="notice notice-success"><p>Found ' . count($fields) . ' custom fields!</p></div>';
         });
+    }
+
+    /**
+     * Get excluded fields option
+     */
+    public function get_excluded_fields()
+    {
+        return get_option('cfb_excluded_fields', array());
+    }
+
+    /**
+     * Check if a field is excluded
+     */
+    public function is_field_excluded($field_key)
+    {
+        $excluded_fields = $this->get_excluded_fields();
+        return in_array($field_key, $excluded_fields);
     }
 }
