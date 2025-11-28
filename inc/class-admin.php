@@ -68,6 +68,9 @@ class CFB_Admin
             'cfb_settings',
             'cfb_github_section'
         );
+
+        // Register AJAX handler for auto-saving excluded fields
+        add_action('wp_ajax_cfb_save_excluded_fields_ajax', array($this, 'ajax_save_excluded_fields'));
     }
 
     /**
@@ -196,6 +199,10 @@ class CFB_Admin
                     <button type="submit" class="button button-primary" style="margin-bottom: 20px;">
                         💾 Save Exclude Settings
                     </button>
+                    <p class="description" style="margin-top: 5px;">
+                        Changes are auto-saved when you check/uncheck fields.
+                        <strong>Reload the block editor page</strong> to see the changes in the block dropdown.
+                    </p>
                 </form>
 
                 <form method="post" id="delete-fields-form" onsubmit="return confirm('Are you sure you want to delete the selected custom fields from ALL posts? This action cannot be undone!');">
@@ -311,6 +318,62 @@ class CFB_Admin
                     label.textContent = 'Visible';
                 }
             }
+
+            // Auto-save excluded fields when checkbox changes
+            function saveExcludedFields() {
+                var form = document.getElementById('exclude-fields-form');
+                var formData = new FormData(form);
+                formData.append('action', 'cfb_save_excluded_fields_ajax');
+                formData.append('cfb_nonce', '<?php echo wp_create_nonce('cfb_save_excluded_fields_ajax'); ?>');
+
+                fetch(ajaxurl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.success) {
+                            // Show success message
+                            var existingNotice = document.querySelector('.cfb-auto-save-notice');
+                            if (existingNotice) {
+                                existingNotice.remove();
+                            }
+
+                            var notice = document.createElement('div');
+                            notice.className = 'notice notice-success is-dismissible cfb-auto-save-notice';
+                            notice.style.marginTop = '10px';
+                            notice.style.marginBottom = '10px';
+                            notice.innerHTML = '<p>' + data.data.message + ' <strong>Please reload the block editor page to see changes.</strong></p>';
+                            var form = document.getElementById('exclude-fields-form');
+                            form.parentNode.insertBefore(notice, form.nextSibling);
+
+                            // Auto-dismiss after 5 seconds
+                            setTimeout(function() {
+                                if (notice.parentNode) {
+                                    notice.remove();
+                                }
+                            }, 5000);
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Error saving excluded fields:', error);
+                    });
+            }
+
+            // Add event listeners to all exclude checkboxes
+            document.addEventListener('DOMContentLoaded', function() {
+                var excludeCheckboxes = document.querySelectorAll('input[name="excluded_fields[]"]');
+                excludeCheckboxes.forEach(function(checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        updateRowStyle(this);
+                        // Debounce: save after 500ms of no changes
+                        clearTimeout(window.excludeSaveTimeout);
+                        window.excludeSaveTimeout = setTimeout(saveExcludedFields, 500);
+                    });
+                });
+            });
         </script>
     <?php
     }
@@ -597,5 +660,31 @@ class CFB_Admin
             );
             echo '</p></div>';
         });
+    }
+
+    /**
+     * AJAX handler for saving excluded fields
+     */
+    public function ajax_save_excluded_fields()
+    {
+        check_ajax_referer('cfb_save_excluded_fields_ajax', 'cfb_nonce');
+
+        $excluded_fields = array();
+        if (isset($_POST['excluded_fields']) && is_array($_POST['excluded_fields'])) {
+            $excluded_fields = array_map('sanitize_text_field', $_POST['excluded_fields']);
+        }
+
+        update_option('cfb_excluded_fields', $excluded_fields);
+
+        // Clear cache to refresh block dropdown
+        $this->custom_fields->clear_custom_fields_cache();
+
+        $count = count($excluded_fields);
+        wp_send_json_success(array(
+            'message' => sprintf(
+                'Exclude settings saved! %d field(s) will be hidden from the block dropdown.',
+                $count
+            )
+        ));
     }
 }

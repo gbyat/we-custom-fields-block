@@ -71,11 +71,17 @@ class CFB_Assets
             'we-custom-fields-block-editor',
         );
 
+        // Get excluded fields hash for cache busting
+        // This ensures the block editor gets fresh data when excluded fields change
+        $excluded_fields = get_option('cfb_excluded_fields', array());
+        $cache_key = md5(serialize($excluded_fields));
+
         foreach ($possible_handles as $handle) {
             if (wp_script_is($handle, 'registered')) {
                 wp_localize_script($handle, 'cfbData', array(
                     'customFields' => $custom_fields,
                     'nonce' => wp_create_nonce('cfb_nonce'),
+                    'cacheKey' => $cache_key, // For cache busting
                 ));
                 break;
             }
