@@ -12,6 +12,16 @@ if (!defined('ABSPATH')) {
 
 class CFB_Custom_Fields
 {
+    private $acf_fields = null;
+
+    /**
+     * Set ACF fields handler (for filtering ACF fields from native list)
+     */
+    public function set_acf_fields_handler($acf_fields)
+    {
+        $this->acf_fields = $acf_fields;
+    }
+
     /**
      * Get all custom fields for the current post
      * @param bool $exclude_hidden Whether to exclude fields marked as hidden in admin
@@ -86,6 +96,16 @@ class CFB_Custom_Fields
         $meta_keys = array_filter($all_meta_keys, function ($key) {
             return strpos($key, '_') !== 0;
         });
+
+        // Filter out ACF fields if ACF is active
+        if ($this->acf_fields && method_exists($this->acf_fields, 'is_acf_active') && $this->acf_fields->is_acf_active()) {
+            $acf_keys = $this->acf_fields->get_all_acf_keys();
+            if (!empty($acf_keys)) {
+                $meta_keys = array_filter($meta_keys, function ($key) use ($acf_keys) {
+                    return !in_array($key, $acf_keys);
+                });
+            }
+        }
 
         // Re-index array
         $meta_keys = array_values($meta_keys);
@@ -188,6 +208,11 @@ class CFB_Custom_Fields
                     continue;
                 }
 
+                // Skip ACF fields if ACF is active
+                if ($this->acf_fields && method_exists($this->acf_fields, 'is_acf_field_key') && $this->acf_fields->is_acf_field_key($key)) {
+                    continue;
+                }
+
                 // Skip if we already have this field
                 if (in_array($key, $seen_keys)) {
                     continue;
@@ -216,6 +241,11 @@ class CFB_Custom_Fields
             );
 
             foreach ($meta_keys as $meta_key) {
+                // Skip ACF fields if ACF is active
+                if ($this->acf_fields && method_exists($this->acf_fields, 'is_acf_field_key') && $this->acf_fields->is_acf_field_key($meta_key)) {
+                    continue;
+                }
+
                 $sample_value = $wpdb->get_var(
                     $wpdb->prepare(
                         "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s LIMIT 1",

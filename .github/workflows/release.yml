@@ -21,6 +21,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y php php-cli php-xml php-mbstring
 
+      - name: Setup Node.js
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Sync version (update CHANGELOG)
+        run: npm run sync-version
+
       - name: Install PHP dependencies
         run: |
           if [ -f composer.json ]; then
@@ -61,9 +72,13 @@ jobs:
 
           # Extract version from tag
           VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Looking for version: ${VERSION}"
 
-          if ! grep -q "## \[${VERSION}\]" CHANGELOG.md; then
+          # Check if version exists in CHANGELOG (more flexible pattern)
+          if ! grep -qE "## \[${VERSION}\]" CHANGELOG.md; then
             echo "ERROR: Version ${VERSION} not found in CHANGELOG.md"
+            echo "CHANGELOG.md contents:"
+            head -20 CHANGELOG.md
             exit 1
           fi
 

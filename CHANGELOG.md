@@ -1,20 +1,31 @@
 # Changelog
 
-## [0.1.15] - 2025-11-28
+## [0.2.2] - 2025-11-30
 
 - Version update
 
+
+## [0.2.1] - 2025-11-30
+
+- Version update
+
+
+## [0.2.0] - 2025-11-30
+
+- Version update
+
+
+## [0.1.15] - 2025-11-28
+
+- Version update
 
 ## [0.1.14] - 2025-11-28
 
 - Version update
 
-
 ## [0.1.13] - 2025-11-28
 
 - Enhance sync-version script to filter out duplicate commits in CHANGELOG, improving changelog generation accuracy.
-- 1.2.15
-
 
 ## [0.1.12] - 2025-11-27
 
@@ -81,3 +92,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.13]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.13
 [0.1.14]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.14
 [0.1.15]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.1.15
+[0.2.0]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.0
+[0.2.1]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.1
+[0.2.2]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.2

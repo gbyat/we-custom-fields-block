@@ -14,11 +14,13 @@ class CFB_Admin
 {
     private $custom_fields;
     private $updates;
+    private $acf_fields;
 
-    public function __construct($custom_fields, $updates)
+    public function __construct($custom_fields, $updates, $acf_fields = null)
     {
         $this->custom_fields = $custom_fields;
         $this->updates = $updates;
+        $this->acf_fields = $acf_fields;
     }
 
     /**
@@ -71,6 +73,9 @@ class CFB_Admin
 
         // Register AJAX handler for auto-saving excluded fields
         add_action('wp_ajax_cfb_save_excluded_fields_ajax', array($this, 'ajax_save_excluded_fields'));
+
+        // Register AJAX handler for auto-saving excluded ACF fields
+        add_action('wp_ajax_cfb_save_excluded_acf_fields_ajax', array($this, 'ajax_save_excluded_acf_fields'));
     }
 
     /**
@@ -119,6 +124,22 @@ class CFB_Admin
                 case 'save_excluded_fields':
                     $this->save_excluded_fields();
                     break;
+                case 'scan_acf_fields':
+                    if ($this->acf_fields) {
+                        $this->acf_fields->clear_acf_fields_cache();
+                    }
+                    break;
+                case 'clear_acf_cache':
+                    if ($this->acf_fields) {
+                        $this->acf_fields->clear_acf_fields_cache();
+                    }
+                    break;
+                case 'save_excluded_acf_fields':
+                    $this->save_excluded_acf_fields();
+                    break;
+                case 'delete_acf_fields':
+                    $this->delete_acf_fields();
+                    break;
             }
         }
 ?>
@@ -130,6 +151,12 @@ class CFB_Admin
                     class="nav-tab <?php echo $active_tab === 'custom-fields' ? 'nav-tab-active' : ''; ?>">
                     <?php echo esc_html__('Custom Fields Manager', 'we-custom-fields-block'); ?>
                 </a>
+                <?php if ($this->acf_fields && $this->acf_fields->is_acf_active()): ?>
+                    <a href="?page=we-custom-fields-block&tab=acf-fields"
+                        class="nav-tab <?php echo $active_tab === 'acf-fields' ? 'nav-tab-active' : ''; ?>">
+                        <?php echo esc_html__('ACF Fields', 'we-custom-fields-block'); ?>
+                    </a>
+                <?php endif; ?>
                 <a href="?page=we-custom-fields-block&tab=settings"
                     class="nav-tab <?php echo $active_tab === 'settings' ? 'nav-tab-active' : ''; ?>">
                     <?php echo esc_html__('Settings', 'we-custom-fields-block'); ?>
@@ -145,6 +172,13 @@ class CFB_Admin
                 switch ($active_tab) {
                     case 'custom-fields':
                         $this->custom_fields_tab();
+                        break;
+                    case 'acf-fields':
+                        if ($this->acf_fields && $this->acf_fields->is_acf_active()) {
+                            $this->acf_fields_tab();
+                        } else {
+                            $this->custom_fields_tab();
+                        }
                         break;
                     case 'settings':
                         $this->settings_tab();
@@ -372,6 +406,228 @@ class CFB_Admin
                         // Debounce: save after 500ms of no changes
                         clearTimeout(window.excludeSaveTimeout);
                         window.excludeSaveTimeout = setTimeout(saveExcludedFields, 500);
+                    });
+                });
+            });
+        </script>
+    <?php
+    }
+
+    /**
+     * ACF Fields tab
+     */
+    private function acf_fields_tab()
+    {
+        if (!$this->acf_fields || !$this->acf_fields->is_acf_active()) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__('Advanced Custom Fields (ACF) is not active.', 'we-custom-fields-block') . '</p></div>';
+            return;
+        }
+
+        // Get all ACF fields including excluded ones for admin display
+        $acf_fields = $this->acf_fields->get_acf_fields(false);
+    ?>
+        <div class="tab-pane">
+            <h2><?php echo esc_html__('ACF Fields Manager', 'we-custom-fields-block'); ?></h2>
+
+            <div class="cfb-actions">
+                <form method="post" style="display: inline;">
+                    <input type="hidden" name="action" value="scan_acf_fields">
+                    <?php wp_nonce_field('cfb_scan_acf_fields', 'cfb_nonce'); ?>
+                    <button type="submit" class="button button-primary">
+                        🔍 <?php echo esc_html__('Scan ACF Fields', 'we-custom-fields-block'); ?>
+                    </button>
+                </form>
+
+                <form method="post" style="display: inline; margin-left: 10px;">
+                    <input type="hidden" name="action" value="clear_acf_cache">
+                    <?php wp_nonce_field('cfb_clear_acf_cache', 'cfb_nonce'); ?>
+                    <button type="submit" class="button button-secondary">
+                        🗑️ <?php echo esc_html__('Clear Cache', 'we-custom-fields-block'); ?>
+                    </button>
+                </form>
+            </div>
+
+            <div class="cfb-stats">
+                <p><strong><?php echo esc_html(sprintf(__('Found %d ACF fields', 'we-custom-fields-block'), count($acf_fields))); ?></strong></p>
+            </div>
+
+            <?php if (!empty($acf_fields)): ?>
+                <form method="post" id="exclude-acf-fields-form">
+                    <input type="hidden" name="action" value="save_excluded_acf_fields">
+                    <?php wp_nonce_field('cfb_save_excluded_acf_fields', 'cfb_nonce'); ?>
+                    <button type="submit" class="button button-primary" style="margin-bottom: 20px;">
+                        💾 <?php echo esc_html__('Save Exclude Settings', 'we-custom-fields-block'); ?>
+                    </button>
+                    <p class="description" style="margin-top: 5px;">
+                        <?php echo esc_html__('Changes are auto-saved when you check/uncheck fields.', 'we-custom-fields-block'); ?>
+                        <strong><?php echo esc_html__('Reload the block editor page', 'we-custom-fields-block'); ?></strong>
+                        <?php echo esc_html__('to see the changes in the block dropdown.', 'we-custom-fields-block'); ?>
+                    </p>
+                </form>
+
+                <form method="post" id="delete-acf-fields-form" onsubmit="return confirm('<?php echo esc_js(__('Are you sure you want to delete the selected ACF field VALUES from ALL posts? This will only delete the values, not the field definitions. This action cannot be undone!', 'we-custom-fields-block')); ?>');">
+                    <input type="hidden" name="action" value="delete_acf_fields">
+                    <?php wp_nonce_field('cfb_delete_acf_fields', 'cfb_nonce'); ?>
+
+                    <div style="margin: 20px 0;">
+                        <button type="button" class="button" onclick="selectAllACFFields()"><?php echo esc_html__('Select All', 'we-custom-fields-block'); ?></button>
+                        <button type="button" class="button" onclick="deselectAllACFFields()"><?php echo esc_html__('Deselect All', 'we-custom-fields-block'); ?></button>
+                        <button type="submit" class="button button-danger" style="background: #dc3232; color: white; border-color: #dc3232;">
+                            🗑️ <?php echo esc_html__('Delete Selected Field Values', 'we-custom-fields-block'); ?>
+                        </button>
+                    </div>
+
+                    <table class="wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;"><input type="checkbox" id="select-all-acf" onchange="toggleAllACFFields(this.checked)"></th>
+                                <th><?php echo esc_html__('Field Key', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Field Name', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Field Label', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Type', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Field Group', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Sample Value', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Posts Count', 'we-custom-fields-block'); ?></th>
+                                <th style="width: 150px;"><?php echo esc_html__('Exclude from Block', 'we-custom-fields-block'); ?></th>
+                                <th><?php echo esc_html__('Actions', 'we-custom-fields-block'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $excluded_fields = $this->acf_fields->get_excluded_fields();
+                            foreach ($acf_fields as $field):
+                                $posts_count = $this->acf_fields->count_posts_with_field($field['key']);
+                                $is_excluded = in_array($field['key'], $excluded_fields);
+                            ?>
+                                <tr <?php echo $is_excluded ? 'style="opacity: 0.6; background-color: #f0f0f0;"' : ''; ?>>
+                                    <td>
+                                        <input type="checkbox" name="acf_fields_to_delete[]" value="<?php echo esc_attr($field['key']); ?>" class="acf-field-checkbox">
+                                    </td>
+                                    <td><code><?php echo esc_html($field['key']); ?></code></td>
+                                    <td><code><?php echo esc_html($field['name']); ?></code></td>
+                                    <td><?php echo esc_html($field['label']); ?></td>
+                                    <td><span class="cfb-field-type"><?php echo esc_html($field['type']); ?></span></td>
+                                    <td><?php echo esc_html($field['field_group']); ?></td>
+                                    <td>
+                                        <span class="cfb-sample-value">
+                                            <?php echo esc_html(substr($field['value'], 0, 50)); ?>
+                                            <?php if (strlen($field['value']) > 50): ?>...<?php endif; ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong><?php echo $posts_count; ?></strong> <?php echo esc_html(_n('post', 'posts', $posts_count, 'we-custom-fields-block')); ?>
+                                    </td>
+                                    <td>
+                                        <label style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="checkbox"
+                                                name="excluded_acf_fields[]"
+                                                value="<?php echo esc_attr($field['key']); ?>"
+                                                form="exclude-acf-fields-form"
+                                                <?php checked($is_excluded); ?>
+                                                onchange="updateACFRowStyle(this)">
+                                            <span style="font-size: 12px; color: #666;">
+                                                <?php echo $is_excluded ? esc_html__('Hidden', 'we-custom-fields-block') : esc_html__('Visible', 'we-custom-fields-block'); ?>
+                                            </span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="button button-small" onclick="copyToClipboard('<?php echo esc_js($field['key']); ?>')">
+                                            <?php echo esc_html__('Copy Key', 'we-custom-fields-block'); ?>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </form>
+            <?php else: ?>
+                <div class="notice notice-warning">
+                    <p><?php echo esc_html__('No ACF fields found. Make sure ACF is active and has field groups configured.', 'we-custom-fields-block'); ?></p>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <script>
+            function toggleAllACFFields(checked) {
+                var checkboxes = document.querySelectorAll('.acf-field-checkbox');
+                checkboxes.forEach(function(checkbox) {
+                    checkbox.checked = checked;
+                });
+            }
+
+            function selectAllACFFields() {
+                document.getElementById('select-all-acf').checked = true;
+                toggleAllACFFields(true);
+            }
+
+            function deselectAllACFFields() {
+                document.getElementById('select-all-acf').checked = false;
+                toggleAllACFFields(false);
+            }
+
+            function updateACFRowStyle(checkbox) {
+                var row = checkbox.closest('tr');
+                var label = checkbox.nextElementSibling;
+                if (checkbox.checked) {
+                    row.style.opacity = '0.6';
+                    row.style.backgroundColor = '#f0f0f0';
+                    label.textContent = '<?php echo esc_js(__('Hidden', 'we-custom-fields-block')); ?>';
+                } else {
+                    row.style.opacity = '1';
+                    row.style.backgroundColor = '';
+                    label.textContent = '<?php echo esc_js(__('Visible', 'we-custom-fields-block')); ?>';
+                }
+            }
+
+            // Auto-save excluded ACF fields when checkbox changes
+            function saveExcludedACFFields() {
+                var form = document.getElementById('exclude-acf-fields-form');
+                var formData = new FormData(form);
+                formData.append('action', 'cfb_save_excluded_acf_fields_ajax');
+                formData.append('cfb_nonce', '<?php echo wp_create_nonce('cfb_save_excluded_acf_fields_ajax'); ?>');
+
+                fetch(ajaxurl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.success) {
+                            var existingNotice = document.querySelector('.cfb-auto-save-notice-acf');
+                            if (existingNotice) {
+                                existingNotice.remove();
+                            }
+
+                            var notice = document.createElement('div');
+                            notice.className = 'notice notice-success is-dismissible cfb-auto-save-notice-acf';
+                            notice.style.marginTop = '10px';
+                            notice.style.marginBottom = '10px';
+                            notice.innerHTML = '<p>' + data.data.message + ' <strong><?php echo esc_js(__('Please reload the block editor page to see changes.', 'we-custom-fields-block')); ?></strong></p>';
+                            var form = document.getElementById('exclude-acf-fields-form');
+                            form.parentNode.insertBefore(notice, form.nextSibling);
+
+                            setTimeout(function() {
+                                if (notice.parentNode) {
+                                    notice.remove();
+                                }
+                            }, 5000);
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Error saving excluded ACF fields:', error);
+                    });
+            }
+
+            // Add event listeners to all exclude checkboxes
+            document.addEventListener('DOMContentLoaded', function() {
+                var excludeCheckboxes = document.querySelectorAll('input[name="excluded_acf_fields[]"]');
+                excludeCheckboxes.forEach(function(checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        updateACFRowStyle(this);
+                        clearTimeout(window.acfExcludeSaveTimeout);
+                        window.acfExcludeSaveTimeout = setTimeout(saveExcludedACFFields, 500);
                     });
                 });
             });
@@ -687,5 +943,103 @@ class CFB_Admin
                 $count
             )
         ));
+    }
+
+    /**
+     * Save excluded ACF fields
+     */
+    private function save_excluded_acf_fields()
+    {
+        if (!$this->acf_fields || !$this->acf_fields->is_acf_active()) {
+            return;
+        }
+
+        if (!wp_verify_nonce($_POST['cfb_nonce'], 'cfb_save_excluded_acf_fields')) {
+            wp_die('Security check failed');
+        }
+
+        $excluded_fields = array();
+        if (isset($_POST['excluded_acf_fields']) && is_array($_POST['excluded_acf_fields'])) {
+            $excluded_fields = array_map('sanitize_text_field', $_POST['excluded_acf_fields']);
+        }
+
+        update_option('cfb_excluded_acf_fields', $excluded_fields);
+
+        // Clear cache to refresh block dropdown
+        $this->acf_fields->clear_acf_fields_cache();
+
+        add_action('admin_notices', function () use ($excluded_fields) {
+            $count = count($excluded_fields);
+            echo '<div class="notice notice-success"><p>';
+            echo sprintf(
+                __('Exclude settings saved! %d ACF field(s) will be hidden from the block dropdown.', 'we-custom-fields-block'),
+                $count
+            );
+            echo '</p></div>';
+        });
+    }
+
+    /**
+     * AJAX handler for saving excluded ACF fields
+     */
+    public function ajax_save_excluded_acf_fields()
+    {
+        if (!$this->acf_fields || !$this->acf_fields->is_acf_active()) {
+            wp_send_json_error(array('message' => __('ACF is not active.', 'we-custom-fields-block')));
+        }
+
+        check_ajax_referer('cfb_save_excluded_acf_fields_ajax', 'cfb_nonce');
+
+        $excluded_fields = array();
+        if (isset($_POST['excluded_acf_fields']) && is_array($_POST['excluded_acf_fields'])) {
+            $excluded_fields = array_map('sanitize_text_field', $_POST['excluded_acf_fields']);
+        }
+
+        update_option('cfb_excluded_acf_fields', $excluded_fields);
+
+        // Clear cache to refresh block dropdown
+        $this->acf_fields->clear_acf_fields_cache();
+
+        $count = count($excluded_fields);
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Exclude settings saved! %d ACF field(s) will be hidden from the block dropdown.', 'we-custom-fields-block'),
+                $count
+            )
+        ));
+    }
+
+    /**
+     * Delete ACF field values
+     */
+    private function delete_acf_fields()
+    {
+        if (!$this->acf_fields || !$this->acf_fields->is_acf_active()) {
+            return;
+        }
+
+        if (!wp_verify_nonce($_POST['cfb_nonce'], 'cfb_delete_acf_fields')) {
+            wp_die('Security check failed');
+        }
+
+        if (!isset($_POST['acf_fields_to_delete']) || !is_array($_POST['acf_fields_to_delete'])) {
+            add_action('admin_notices', function () {
+                echo '<div class="notice notice-error"><p>' . esc_html__('No ACF fields selected for deletion.', 'we-custom-fields-block') . '</p></div>';
+            });
+            return;
+        }
+
+        $fields_to_delete = array_map('sanitize_text_field', $_POST['acf_fields_to_delete']);
+        $result = $this->acf_fields->delete_acf_field_values($fields_to_delete);
+
+        add_action('admin_notices', function () use ($result) {
+            echo '<div class="notice notice-success"><p>';
+            echo sprintf(
+                __('Successfully deleted %d ACF field value(s) from %d post(s).', 'we-custom-fields-block'),
+                $result['deleted_count'],
+                $result['posts_affected']
+            );
+            echo '</p></div>';
+        });
     }
 }
