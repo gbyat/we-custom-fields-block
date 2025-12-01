@@ -324,8 +324,11 @@ class CFB_Custom_Fields
         $deleted_count = 0;
         $posts_affected = 0;
 
+        // Optional advanced ACF cleanup flag
+        $do_acf_cleanup = isset($_POST['cfb_acf_cleanup']) && $_POST['cfb_acf_cleanup'];
+
         foreach ($fields_to_delete as $meta_key) {
-            // Count posts before deletion
+            // Count posts before deletion (only for the main meta key)
             $posts_before = $this->count_posts_with_field($meta_key);
 
             // Delete all meta entries for this key
@@ -334,6 +337,29 @@ class CFB_Custom_Fields
                 array('meta_key' => $meta_key),
                 array('%s')
             );
+
+            // Optional advanced cleanup for typical ACF shadow meta
+            // pattern: _my_field with value "field_abcdef..."
+            if ($do_acf_cleanup) {
+                $acf_shadow_key = '_' . ltrim($meta_key, '_');
+                if ($acf_shadow_key && $acf_shadow_key !== $meta_key) {
+                    $acf_marker_value = $wpdb->get_var(
+                        $wpdb->prepare(
+                            "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s LIMIT 1",
+                            $acf_shadow_key
+                        )
+                    );
+
+                    // If the shadow meta contains a field key (field_...), treat it as ACF metadata and remove it.
+                    if (is_string($acf_marker_value) && strpos($acf_marker_value, 'field_') === 0) {
+                        $wpdb->delete(
+                            $wpdb->postmeta,
+                            array('meta_key' => $acf_shadow_key),
+                            array('%s')
+                        );
+                    }
+                }
+            }
 
             if ($result !== false) {
                 $deleted_count++;

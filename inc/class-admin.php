@@ -252,6 +252,21 @@ class CFB_Admin
                         </button>
                     </div>
 
+                    <div style="margin: 10px 0 20px; max-width: 700px; padding: 10px 12px; border-left: 4px solid #d63638; background: #fff4f4;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px;">
+                            <input type="checkbox" name="cfb_acf_cleanup" value="1" style="margin-top: 3px;">
+                            <span>
+                                <strong><?php echo esc_html__('Also remove internal ACF metadata for selected fields', 'we-custom-fields-block'); ?></strong><br>
+                                <span style="display:block; margin-top:2px; color:#444;">
+                                    <?php echo esc_html__('This will additionally delete underscore-prefixed meta entries (e.g. _my_field) that look like ACF markers (values starting with field_...).', 'we-custom-fields-block'); ?>
+                                </span>
+                                <span style="display:block; margin-top:4px; color:#a00; font-weight:bold;">
+                                    <?php echo esc_html__('Use at your own risk and create a full database backup before running this cleanup.', 'we-custom-fields-block'); ?>
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
                     <table class="wp-list-table widefat fixed striped">
                         <thead>
                             <tr>

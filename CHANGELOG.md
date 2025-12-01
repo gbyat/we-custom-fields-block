@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.3] - 2025-12-01
+
+- Version update
+
+
 ## [0.2.2] - 2025-11-30
 
 - Version update
@@ -95,3 +100,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.0
 [0.2.1]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.1
 [0.2.2]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.2
+[0.2.3]: https://github.com/gbyat/we-custom-fields-block/releases/tag/v0.2.3
