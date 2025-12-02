@@ -4,7 +4,7 @@
  * Plugin Name: WE Custom Fields Block
  * Plugin URI: https://github.com/gbyat/we-custom-fields-block
  * Description: Fügt native WordPress Custom Fields als Blöcke mit Typografie- und Farboptionen ein
- * Version: 0.2.3
+ * Version: 0.2.4
  * Author: Gabriele Laesser
  * License: GPL v2 or later
  * Text Domain: we-custom-fields-block
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('CFB_VERSION', '0.2.3');
+define('CFB_VERSION', '0.2.4');
 define('CFB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CFB_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('CFB_GITHUB_REPO', 'gbyat/we-custom-fields-block');
